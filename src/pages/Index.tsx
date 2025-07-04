@@ -1,100 +1,76 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Users, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+interface Tour {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  price: number;
+  duration: string;
+  rating: number;
+  category: string;
+  group_size: string;
+  highlights: string[];
+}
 
 const Index = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('todos');
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [
-    { id: 'todos', name: 'Todos los Tours', count: 24 },
-    { id: 'aventura', name: 'Aventura', count: 8 },
-    { id: 'playa', name: 'Playa & Mar', count: 6 },
-    { id: 'cultura', name: 'Cultura', count: 4 },
-    { id: 'naturaleza', name: 'Naturaleza', count: 6 }
+    { id: 'todos', name: 'Todos los Tours', count: 0 },
+    { id: 'aventura', name: 'Aventura', count: 0 },
+    { id: 'playa', name: 'Playa & Mar', count: 0 },
+    { id: 'cultura', name: 'Cultura', count: 0 },
+    { id: 'naturaleza', name: 'Naturaleza', count: 0 }
   ];
 
-  const tours = [
-    {
-      id: 1,
-      title: 'Excursión a Saona Island',
-      description: 'Descubre la isla más bella del Caribe dominicano con playas de arena blanca y aguas cristalinas.',
-      image: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 85,
-      duration: '8 horas',
-      rating: 4.8,
-      category: 'playa',
-      groupSize: '2-15 personas',
-      highlights: ['Almuerzo incluido', 'Snorkeling', 'Transporte']
-    },
-    {
-      id: 2,
-      title: 'Safari por la Selva Tropical',
-      description: 'Aventura en 4x4 por senderos ocultos, cascadas secretas y pueblos auténticos.',
-      image: 'https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 95,
-      duration: '6 horas',
-      rating: 4.9,
-      category: 'aventura',
-      groupSize: '4-12 personas',
-      highlights: ['Guía experto', 'Cascadas', 'Almuerzo típico']
-    },
-    {
-      id: 3,
-      title: 'Tour Cultural Santo Domingo',
-      description: 'Explora la primera ciudad de América con arquitectura colonial y rica historia.',
-      image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 75,
-      duration: '10 horas',
-      rating: 4.7,
-      category: 'cultura',
-      groupSize: '6-20 personas',
-      highlights: ['Zona Colonial', 'Museos', 'Almuerzo']
-    },
-    {
-      id: 4,
-      title: 'Hoyo Azul & Scape Park',
-      description: 'Cenote natural de aguas turquesas rodeado de naturaleza virgen.',
-      image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 65,
-      duration: '4 horas',
-      rating: 4.6,
-      category: 'naturaleza',
-      groupSize: '2-10 personas',
-      highlights: ['Cenote único', 'Fotos profesionales', 'Refrescos']
-    },
-    {
-      id: 5,
-      title: 'Catamarán Sunset Premium',
-      description: 'Navegación al atardecer con música en vivo, cena gourmet y barra libre.',
-      image: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 120,
-      duration: '5 horas',
-      rating: 4.9,
-      category: 'playa',
-      groupSize: '2-30 personas',
-      highlights: ['Barra libre', 'Cena gourmet', 'Música en vivo']
-    },
-    {
-      id: 6,
-      title: 'Tirolinas & Aventura Extrema',
-      description: 'Adrenalina pura con 12 tirolinas sobre la copa de los árboles.',
-      image: 'https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      price: 89,
-      duration: '3 horas',
-      rating: 4.8,
-      category: 'aventura',
-      groupSize: '2-8 personas',
-      highlights: ['12 tirolinas', 'Equipo incluido', 'Certificado']
+  useEffect(() => {
+    fetchTours();
+  }, []);
+
+  const fetchTours = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setTours(data || []);
+      
+      // Update category counts
+      categories[0].count = data?.length || 0;
+      categories.forEach(cat => {
+        if (cat.id !== 'todos') {
+          cat.count = data?.filter(tour => tour.category === cat.id).length || 0;
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredTours = selectedCategory === 'todos' 
     ? tours 
     : tours.filter(tour => tour.category === selectedCategory);
+
+  const handleReserveNow = (tourId: string) => {
+    navigate(`/reservar/${tourId}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
@@ -108,15 +84,16 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Punta Cana Tours
+                  Jon Tours and Adventure
                 </h1>
                 <p className="text-sm text-gray-600">Experiencias Auténticas</p>
               </div>
             </div>
             <nav className="hidden md:flex space-x-8">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
-              <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
+              <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
+              <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
+              <a href="/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
             </nav>
           </div>
         </div>
@@ -204,64 +181,73 @@ const Index = () => {
         </div>
 
         {/* Tours Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredTours.map((tour) => (
-            <Card key={tour.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-              <div className="relative overflow-hidden">
-                <img 
-                  src={tour.image} 
-                  alt={tour.title}
-                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
-                    ${tour.price}
-                  </Badge>
-                </div>
-                <div className="absolute top-4 left-4">
-                  <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium">{tour.rating}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <CardHeader>
-                <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
-                  {tour.title}
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  {tour.description}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{tour.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    <span>{tour.groupSize}</span>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  {tour.highlights.map((highlight, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {highlight}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Cargando tours...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredTours.map((tour) => (
+              <Card key={tour.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={tour.image_url} 
+                    alt={tour.title}
+                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
+                      ${tour.price}
                     </Badge>
-                  ))}
+                  </div>
+                  <div className="absolute top-4 left-4">
+                    <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      <span className="text-sm font-medium">{tour.rating}</span>
+                    </div>
+                  </div>
                 </div>
                 
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
-                  Reservar Ahora
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <CardHeader>
+                  <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
+                    {tour.title}
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    {tour.description}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{tour.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      <span>{tour.group_size}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {tour.highlights.map((highlight, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {highlight}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                    onClick={() => handleReserveNow(tour.id)}
+                  >
+                    Reservar Ahora
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}
@@ -278,7 +264,7 @@ const Index = () => {
               WhatsApp +1 (809) 555-0123
             </Button>
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-              Email: info@puntacanatours.com
+              Email: info@jontours.com
             </Button>
           </div>
         </div>
@@ -292,7 +278,7 @@ const Index = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold">Punta Cana Tours</span>
+              <span className="text-xl font-bold">Jon Tours and Adventure</span>
             </div>
             <p className="text-gray-400">
               Tu compañía de confianza para explorar lo mejor de República Dominicana.
@@ -323,7 +309,7 @@ const Index = () => {
             <h4 className="font-semibold mb-4">Contacto</h4>
             <ul className="space-y-2 text-gray-400">
               <li>📱 +1 (809) 555-0123</li>
-              <li>✉️ info@puntacanatours.com</li>
+              <li>✉️ info@jontours.com</li>
               <li>📍 Bávaro, Punta Cana</li>
               <li>🕒 7:00 AM - 10:00 PM</li>
             </ul>
@@ -331,7 +317,7 @@ const Index = () => {
         </div>
         
         <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-          <p>&copy; 2024 Punta Cana Tours. Todos los derechos reservados.</p>
+          <p>&copy; 2024 Jon Tours and Adventure. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

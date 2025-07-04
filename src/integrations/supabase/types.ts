@@ -9,7 +9,98 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      posts: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          duration: string
+          group_size: string
+          highlights: string[]
+          id: string
+          image_url: string
+          price: number
+          rating: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          duration: string
+          group_size: string
+          highlights: string[]
+          id?: string
+          image_url: string
+          price: number
+          rating?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          duration?: string
+          group_size?: string
+          highlights?: string[]
+          id?: string
+          image_url?: string
+          price?: number
+          rating?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string | null
+          date: string
+          email: string
+          guests: number
+          id: string
+          name: string
+          phone: string
+          special_requests: string | null
+          status: string | null
+          tour_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          email: string
+          guests: number
+          id?: string
+          name: string
+          phone: string
+          special_requests?: string | null
+          status?: string | null
+          tour_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          email?: string
+          guests?: number
+          id?: string
+          name?: string
+          phone?: string
+          special_requests?: string | null
+          status?: string | null
+          tour_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
