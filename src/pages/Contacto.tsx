@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, ArrowLeft, Phone, Mail, Clock, MessageCircle, Send, MapPin as Location } from 'lucide-react';
@@ -104,7 +103,7 @@ const Contacto = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">Teléfono</h4>
-                    <p className="text-gray-600">+1 (809) 555-0123</p>
+                    <p className="text-gray-600">+1 (809) 840-8257</p>
                     <p className="text-sm text-gray-500">WhatsApp disponible</p>
                   </div>
                 </div>
@@ -151,7 +150,7 @@ const Contacto = () => {
               <CardContent className="space-y-4">
                 <Button 
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => window.open('https://wa.me/18095550123', '_blank')}
+                  onClick={() => window.open('https://wa.me/18098408257', '_blank')}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   WhatsApp
@@ -160,7 +159,7 @@ const Contacto = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => window.location.href = 'tel:+18095550123'}
+                  onClick={() => window.location.href = 'tel:+18098408257'}
                 >
                   <Phone className="w-4 h-4 mr-2" />
                   Llamar Ahora
