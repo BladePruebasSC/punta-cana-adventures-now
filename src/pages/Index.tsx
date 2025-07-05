@@ -21,19 +21,25 @@ interface Tour {
   highlights: string[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+  count: number;
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const categories = [
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: 'Todos los Tours', count: 0 },
     { id: 'aventura', name: 'Aventura', count: 0 },
     { id: 'playa', name: 'Playa & Mar', count: 0 },
     { id: 'cultura', name: 'Cultura', count: 0 },
     { id: 'naturaleza', name: 'Naturaleza', count: 0 }
-  ];
+  ]);
 
   useEffect(() => {
     fetchTours();
@@ -50,13 +56,17 @@ const Index = () => {
       
       setTours(data || []);
       
-      // Update category counts
-      categories[0].count = data?.length || 0;
-      categories.forEach(cat => {
-        if (cat.id !== 'todos') {
-          cat.count = data?.filter(tour => tour.category === cat.id).length || 0;
+      // Update category counts with actual data
+      const updatedCategories = categories.map(cat => {
+        if (cat.id === 'todos') {
+          return { ...cat, count: data?.length || 0 };
+        } else {
+          const count = data?.filter(tour => tour.category === cat.id).length || 0;
+          return { ...cat, count };
         }
       });
+      
+      setCategories(updatedCategories);
     } catch (error) {
       console.error('Error fetching tours:', error);
     } finally {
@@ -64,12 +74,37 @@ const Index = () => {
     }
   };
 
-  const filteredTours = selectedCategory === 'todos' 
-    ? tours 
-    : tours.filter(tour => tour.category === selectedCategory);
+  // Filter tours based on search term and selected category
+  const filteredTours = tours.filter(tour => {
+    // Filter by category
+    const matchesCategory = selectedCategory === 'todos' || tour.category === selectedCategory;
+    
+    // Filter by search term
+    const matchesSearch = searchTerm === '' || 
+      tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tour.highlights.some(highlight => 
+        highlight.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    
+    return matchesCategory && matchesSearch;
+  });
 
   const handleReserveNow = (tourId: string) => {
     navigate(`/reservar/${tourId}`);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Scroll to tours section when search is performed
+    const toursSection = document.getElementById('tours');
+    if (toursSection) {
+      toursSection.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
@@ -118,18 +153,24 @@ const Index = () => {
             Tours únicos en Punta Cana • Experiencias auténticas • Memorias inolvidables
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <div className="relative w-full sm:w-96">
               <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <Input 
                 placeholder="Buscar tours, aventuras..." 
                 className="pl-10 h-12 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70"
+                value={searchTerm}
+                onChange={handleSearchChange}
               />
             </div>
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-12 px-8">
+            <Button 
+              type="submit"
+              size="lg" 
+              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-12 px-8"
+            >
               Explorar Tours
             </Button>
-          </div>
+          </form>
 
           <div className="flex flex-wrap justify-center gap-4 text-sm">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
@@ -159,6 +200,28 @@ const Index = () => {
           </p>
         </div>
 
+        {/* Search Results Info */}
+        {searchTerm && (
+          <div className="mb-6 text-center">
+            <p className="text-gray-600">
+              {filteredTours.length > 0 
+                ? `${filteredTours.length} tour${filteredTours.length === 1 ? '' : 's'} encontrado${filteredTours.length === 1 ? '' : 's'} para "${searchTerm}"`
+                : `No se encontraron tours para "${searchTerm}"`
+              }
+            </p>
+            {searchTerm && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchTerm('')}
+                className="mt-2"
+              >
+                Limpiar búsqueda
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Category Filters */}
         <div className="flex flex-wrap justify-center gap-3 mb-10">
           {categories.map((category) => (
@@ -184,6 +247,23 @@ const Index = () => {
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Cargando tours...</p>
+          </div>
+        ) : filteredTours.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg mb-4">
+              {searchTerm ? 'No se encontraron tours que coincidan con tu búsqueda.' : 'No hay tours disponibles en esta categoría.'}
+            </p>
+            {(searchTerm || selectedCategory !== 'todos') && (
+              <Button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('todos');
+                }}
+                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+              >
+                Ver todos los tours
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
