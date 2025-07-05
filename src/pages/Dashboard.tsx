@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Plus, Edit, Trash2, Eye, Calendar, Users, MapPin } from 'lucide-react';
+import { Lock, Plus, Edit, Trash2, Eye, Calendar, Users, MapPin, Image, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const ADMIN_PASSWORD = "admin123"; // Cambia esto por una clave más segura
+const ADMIN_PASSWORD = "admin123";
 
 interface Tour {
   id: string;
@@ -27,6 +27,15 @@ interface Tour {
   group_size: string;
   highlights: string[];
   created_at: string;
+}
+
+interface TourImage {
+  id: string;
+  tour_id: string;
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+  order_index: number;
 }
 
 interface Reservation {
@@ -53,6 +62,11 @@ const Dashboard = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImagesDialogOpen, setIsImagesDialogOpen] = useState(false);
+  const [selectedTourImages, setSelectedTourImages] = useState<TourImage[]>([]);
+  const [selectedTourId, setSelectedTourId] = useState<string>('');
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageAlt, setNewImageAlt] = useState('');
 
   const [tourForm, setTourForm] = useState({
     title: '',
@@ -125,6 +139,136 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: "No se pudieron cargar las reservas",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchTourImages = async (tourId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('tour_images')
+        .select('*')
+        .eq('tour_id', tourId)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      setSelectedTourImages(data || []);
+    } catch (error) {
+      console.error('Error fetching tour images:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las imágenes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManageImages = async (tour: Tour) => {
+    setSelectedTourId(tour.id);
+    await fetchTourImages(tour.id);
+    setIsImagesDialogOpen(true);
+  };
+
+  const handleAddImage = async () => {
+    if (!newImageUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "La URL de la imagen es requerida",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const maxOrderIndex = Math.max(...selectedTourImages.map(img => img.order_index), -1);
+      
+      const { error } = await supabase
+        .from('tour_images')
+        .insert([
+          {
+            tour_id: selectedTourId,
+            image_url: newImageUrl,
+            alt_text: newImageAlt || 'Imagen del tour',
+            is_primary: false,
+            order_index: maxOrderIndex + 1
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Imagen agregada correctamente",
+      });
+
+      setNewImageUrl('');
+      setNewImageAlt('');
+      await fetchTourImages(selectedTourId);
+    } catch (error) {
+      console.error('Error adding image:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar la imagen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
+    if (confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
+      try {
+        const { error } = await supabase
+          .from('tour_images')
+          .delete()
+          .eq('id', imageId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Éxito",
+          description: "Imagen eliminada correctamente",
+        });
+
+        await fetchTourImages(selectedTourId);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar la imagen",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSetPrimaryImage = async (imageId: string) => {
+    try {
+      // First, set all images as non-primary
+      await supabase
+        .from('tour_images')
+        .update({ is_primary: false })
+        .eq('tour_id', selectedTourId);
+
+      // Then set the selected image as primary
+      const { error } = await supabase
+        .from('tour_images')
+        .update({ is_primary: true })
+        .eq('id', imageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Imagen principal actualizada",
+      });
+
+      await fetchTourImages(selectedTourId);
+    } catch (error) {
+      console.error('Error setting primary image:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la imagen principal",
         variant: "destructive",
       });
     }
@@ -535,6 +679,13 @@ const Dashboard = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleManageImages(tour)}
+                      >
+                        <Image className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEditTour(tour)}
                       >
                         <Edit className="w-4 h-4" />
@@ -553,6 +704,110 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Images Management Dialog */}
+        <Dialog open={isImagesDialogOpen} onOpenChange={setIsImagesDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gestionar Imágenes del Tour</DialogTitle>
+              <DialogDescription>
+                Agrega, elimina y organiza las imágenes del tour
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Add New Image */}
+              <div className="border rounded-lg p-4 space-y-4">
+                <h4 className="font-semibold">Agregar Nueva Imagen</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-image-url">URL de la Imagen *</Label>
+                    <Input
+                      id="new-image-url"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-image-alt">Texto Alternativo</Label>
+                    <Input
+                      id="new-image-alt"
+                      value={newImageAlt}
+                      onChange={(e) => setNewImageAlt(e.target.value)}
+                      placeholder="Descripción de la imagen"
+                    />
+                  </div>
+                </div>
+                <Button onClick={handleAddImage} className="bg-gradient-to-r from-blue-600 to-emerald-600">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Imagen
+                </Button>
+              </div>
+
+              {/* Current Images */}
+              <div className="space-y-4">
+                <h4 className="font-semibold">Imágenes Actuales ({selectedTourImages.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedTourImages.map((image) => (
+                    <div key={image.id} className="relative border rounded-lg overflow-hidden">
+                      <img 
+                        src={image.image_url} 
+                        alt={image.alt_text}
+                        className="w-full h-48 object-cover"
+                      />
+                      
+                      {image.is_primary && (
+                        <Badge className="absolute top-2 left-2 bg-green-600">
+                          Principal
+                        </Badge>
+                      )}
+                      
+                      <div className="p-3 space-y-2">
+                        <p className="text-sm text-gray-600 truncate">
+                          {image.alt_text || 'Sin descripción'}
+                        </p>
+                        
+                        <div className="flex space-x-1">
+                          {!image.is_primary && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSetPrimaryImage(image.id)}
+                              className="text-xs"
+                            >
+                              Hacer Principal
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteImage(image.id)}
+                            className="text-xs"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {selectedTourImages.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay imágenes para este tour. Agrega la primera imagen arriba.
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setIsImagesDialogOpen(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Reservations Tab */}
         {activeTab === 'reservations' && (

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,11 +25,20 @@ interface Tour {
   highlights: string[];
 }
 
+interface TourImage {
+  id: string;
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+  order_index: number;
+}
+
 const Reservar = () => {
   const { tourId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [tour, setTour] = useState<Tour | null>(null);
+  const [tourImages, setTourImages] = useState<TourImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,22 +53,34 @@ const Reservar = () => {
 
   useEffect(() => {
     if (tourId) {
-      fetchTour();
+      fetchTourData();
     }
   }, [tourId]);
 
-  const fetchTour = async () => {
+  const fetchTourData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch tour info
+      const { data: tourData, error: tourError } = await supabase
         .from('posts')
         .select('*')
         .eq('id', tourId)
         .single();
 
-      if (error) throw error;
-      setTour(data);
+      if (tourError) throw tourError;
+      setTour(tourData);
+
+      // Fetch tour images
+      const { data: imagesData, error: imagesError } = await supabase
+        .from('tour_images')
+        .select('*')
+        .eq('tour_id', tourId)
+        .order('order_index', { ascending: true });
+
+      if (imagesError) throw imagesError;
+      setTourImages(imagesData || []);
+
     } catch (error) {
-      console.error('Error fetching tour:', error);
+      console.error('Error fetching tour data:', error);
       toast({
         title: "Error",
         description: "No se pudo cargar la información del tour",
@@ -96,7 +118,6 @@ const Reservar = () => {
         description: "Tu reserva ha sido enviada. Te contactaremos pronto para confirmar los detalles.",
       });
 
-      // Redirect after successful submission
       setTimeout(() => {
         navigate('/');
       }, 2000);
@@ -179,11 +200,34 @@ const Reservar = () => {
           <div className="space-y-6">
             <Card>
               <div className="relative">
-                <img 
-                  src={tour.image_url} 
-                  alt={tour.title}
-                  className="w-full h-64 object-cover rounded-t-lg"
-                />
+                {tourImages.length > 0 ? (
+                  <Carousel className="w-full">
+                    <CarouselContent>
+                      {tourImages.map((image, index) => (
+                        <CarouselItem key={image.id}>
+                          <img 
+                            src={image.image_url} 
+                            alt={image.alt_text || tour.title}
+                            className="w-full h-64 object-cover rounded-t-lg"
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {tourImages.length > 1 && (
+                      <>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                      </>
+                    )}
+                  </Carousel>
+                ) : (
+                  <img 
+                    src={tour.image_url} 
+                    alt={tour.title}
+                    className="w-full h-64 object-cover rounded-t-lg"
+                  />
+                )}
+                
                 <div className="absolute top-4 right-4">
                   <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-lg px-3 py-1">
                     ${tour.price}
@@ -224,6 +268,12 @@ const Reservar = () => {
                     ))}
                   </div>
                 </div>
+
+                {tourImages.length > 1 && (
+                  <div className="text-sm text-gray-600 text-center">
+                    📸 {tourImages.length} fotos disponibles - Usa las flechas para ver más
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -280,7 +330,7 @@ const Reservar = () => {
                         value={formData.phone}
                         onChange={handleInputChange}
                         required
-                        placeholder="+1 (809) 555-0123"
+                        placeholder="+1 (809) 840-8257"
                       />
                     </div>
                     

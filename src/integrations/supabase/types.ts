@@ -101,6 +101,44 @@ export type Database = {
           },
         ]
       }
+      tour_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          is_primary: boolean | null
+          order_index: number | null
+          tour_id: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_primary?: boolean | null
+          order_index?: number | null
+          tour_id?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_primary?: boolean | null
+          order_index?: number | null
+          tour_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_images_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
