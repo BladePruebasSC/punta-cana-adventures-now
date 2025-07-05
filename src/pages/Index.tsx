@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Users, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -352,7 +351,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
@@ -384,9 +383,7 @@ const Index = () => {
               <li>Guías Certificados</li>
             </ul>
           </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-8">
+          
           <div>
             <h4 className="font-semibold mb-4">Contacto</h4>
             <ul className="space-y-2 text-gray-400">
@@ -395,9 +392,10 @@ const Index = () => {
               <li>🕒 7:00 AM - 10:00 PM</li>
             </ul>
           </div>
-          <div className="text-center md:text-right">
-            <p className="text-gray-400">&copy; 2024 Jon Tours and Adventure. Todos los derechos reservados.</p>
-          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
+          <p>&copy; 2024 Jon Tours and Adventure. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
