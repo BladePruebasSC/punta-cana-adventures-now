@@ -57,6 +57,7 @@ interface ContactMessage {
   name: string;
   email: string;
   phone: string;
+  subject: string;
   message: string;
   created_at: string;
   status: string;
@@ -158,31 +159,20 @@ const Dashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      // Por ahora simulamos datos de mensajes ya que no tenemos la tabla contact_messages
-      // En un futuro se puede crear esta tabla en la base de datos
-      const mockMessages: ContactMessage[] = [
-        {
-          id: '1',
-          name: 'María González',
-          email: 'maria@email.com',
-          phone: '+1 (809) 555-0001',
-          message: 'Hola, me interesa el tour a Saona Island para 4 personas',
-          created_at: new Date().toISOString(),
-          status: 'nuevo'
-        },
-        {
-          id: '2',
-          name: 'Juan Pérez',
-          email: 'juan@email.com',
-          phone: '+1 (809) 555-0002',
-          message: '¿Tienen disponibilidad para el safari de aventura el próximo fin de semana?',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          status: 'respondido'
-        }
-      ];
-      setMessages(mockMessages);
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los mensajes",
+        variant: "destructive",
+      });
     }
   };
 
@@ -447,14 +437,29 @@ const Dashboard = () => {
     }
   };
 
-  const updateMessageStatus = (id: string, status: string) => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === id ? { ...msg, status } : msg
-    ));
-    toast({
-      title: "Éxito",
-      description: "Estado del mensaje actualizado",
-    });
+  const updateMessageStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Estado del mensaje actualizado",
+      });
+      
+      fetchMessages();
+    } catch (error) {
+      console.error('Error updating message status:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado del mensaje",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isAuthenticated) {
@@ -561,7 +566,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {messages.filter(m => m.status === 'nuevo').length}
+                {messages.filter(m => m.status === 'unread').length}
               </div>
             </CardContent>
           </Card>
@@ -972,14 +977,15 @@ const Dashboard = () => {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold">{message.name}</h3>
                           <Badge 
-                            variant={message.status === 'nuevo' ? 'default' : 'secondary'}
+                            variant={message.status === 'unread' ? 'default' : 'secondary'}
                           >
-                            {message.status === 'nuevo' ? 'Nuevo' : 'Respondido'}
+                            {message.status === 'unread' ? 'Nuevo' : 'Respondido'}
                           </Badge>
                         </div>
                         <div className="text-sm text-gray-600 mb-2">
+                          <div className="mb-1"><strong>Asunto:</strong> {message.subject}</div>
                           <span className="mr-4">📧 {message.email}</span>
-                          <span>📱 {message.phone}</span>
+                          {message.phone && <span>📱 {message.phone}</span>}
                         </div>
                         <p className="text-gray-800">{message.message}</p>
                         <p className="text-xs text-gray-500 mt-2">
@@ -987,26 +993,28 @@ const Dashboard = () => {
                         </p>
                       </div>
                       <div className="flex space-x-2 ml-4">
-                        {message.status === 'nuevo' && (
+                        {message.status === 'unread' && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateMessageStatus(message.id, 'respondido')}
+                            onClick={() => updateMessageStatus(message.id, 'read')}
                           >
-                            Marcar como Respondido
+                            Marcar como Leído
+                          </Button>
+                        )}
+                        {message.phone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(`https://wa.me/${message.phone.replace(/\D/g, '')}`, '_blank')}
+                          >
+                            WhatsApp
                           </Button>
                         )}
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`https://wa.me/${message.phone.replace(/\D/g, '')}`, '_blank')}
-                        >
-                          WhatsApp
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.location.href = `mailto:${message.email}`}
+                          onClick={() => window.location.href = `mailto:${message.email}?subject=Re: ${message.subject}`}
                         >
                           Email
                         </Button>
