@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Plus, Edit, Trash2, Eye, Calendar, Users, MapPin, Image, X } from 'lucide-react';
+import { Lock, Plus, Edit, Trash2, Eye, Calendar, Users, MapPin, Image, X, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +52,16 @@ interface Reservation {
   posts?: { title: string };
 }
 
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  created_at: string;
+  status: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -60,6 +70,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('tours');
   const [tours, setTours] = useState<Tour[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [editingTour, setEditingTour] = useState<Tour | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImagesDialogOpen, setIsImagesDialogOpen] = useState(false);
@@ -84,6 +95,7 @@ const Dashboard = () => {
     if (isAuthenticated) {
       fetchTours();
       fetchReservations();
+      fetchMessages();
     }
   }, [isAuthenticated]);
 
@@ -141,6 +153,36 @@ const Dashboard = () => {
         description: "No se pudieron cargar las reservas",
         variant: "destructive",
       });
+    }
+  };
+
+  const fetchMessages = async () => {
+    try {
+      // Por ahora simulamos datos de mensajes ya que no tenemos la tabla contact_messages
+      // En un futuro se puede crear esta tabla en la base de datos
+      const mockMessages: ContactMessage[] = [
+        {
+          id: '1',
+          name: 'María González',
+          email: 'maria@email.com',
+          phone: '+1 (809) 555-0001',
+          message: 'Hola, me interesa el tour a Saona Island para 4 personas',
+          created_at: new Date().toISOString(),
+          status: 'nuevo'
+        },
+        {
+          id: '2',
+          name: 'Juan Pérez',
+          email: 'juan@email.com',
+          phone: '+1 (809) 555-0002',
+          message: '¿Tienen disponibilidad para el safari de aventura el próximo fin de semana?',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          status: 'respondido'
+        }
+      ];
+      setMessages(mockMessages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
     }
   };
 
@@ -405,6 +447,16 @@ const Dashboard = () => {
     }
   };
 
+  const updateMessageStatus = (id: string, status: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === id ? { ...msg, status } : msg
+    ));
+    toast({
+      title: "Éxito",
+      description: "Estado del mensaje actualizado",
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
@@ -469,7 +521,7 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Tours</CardTitle>
@@ -501,6 +553,18 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mensajes Nuevos</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {messages.filter(m => m.status === 'nuevo').length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Tabs */}
@@ -518,6 +582,13 @@ const Dashboard = () => {
             className="flex-1"
           >
             Ver Reservas
+          </Button>
+          <Button
+            variant={activeTab === 'messages' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('messages')}
+            className="flex-1"
+          >
+            Mensajes
           </Button>
         </div>
 
@@ -881,6 +952,75 @@ const Dashboard = () => {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Mensajes de Contacto</CardTitle>
+              <CardDescription>Gestiona los mensajes recibidos de clientes potenciales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <div key={message.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold">{message.name}</h3>
+                          <Badge 
+                            variant={message.status === 'nuevo' ? 'default' : 'secondary'}
+                          >
+                            {message.status === 'nuevo' ? 'Nuevo' : 'Respondido'}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="mr-4">📧 {message.email}</span>
+                          <span>📱 {message.phone}</span>
+                        </div>
+                        <p className="text-gray-800">{message.message}</p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          {new Date(message.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        {message.status === 'nuevo' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateMessageStatus(message.id, 'respondido')}
+                          >
+                            Marcar como Respondido
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`https://wa.me/${message.phone.replace(/\D/g, '')}`, '_blank')}
+                        >
+                          WhatsApp
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.location.href = `mailto:${message.email}`}
+                        >
+                          Email
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {messages.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay mensajes de contacto por el momento.
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

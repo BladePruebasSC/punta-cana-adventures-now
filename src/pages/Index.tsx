@@ -107,6 +107,19 @@ const Index = () => {
     }
   };
 
+  const handleWhatsAppClick = () => {
+    const phoneNumber = '18098408257'; // Número sin espacios ni caracteres especiales
+    const message = encodeURIComponent('Hola, me interesa información sobre sus tours en Punta Cana');
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  };
+
+  const handleEmailClick = () => {
+    const email = 'info@jontours.com';
+    const subject = encodeURIComponent('Consulta sobre Tours en Punta Cana');
+    const body = encodeURIComponent('Hola,\n\nMe interesa obtener más información sobre sus tours en Punta Cana.\n\nGracias');
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
       {/* Header */}
@@ -390,10 +403,18 @@ const Index = () => {
             Contacta con nuestros expertos locales para crear tu experiencia perfecta
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              WhatsApp +1 (809) 555-0123
+            <Button 
+              size="lg" 
+              className="bg-white text-blue-600 hover:bg-gray-100"
+              onClick={handleWhatsAppClick}
+            >
+              WhatsApp +1 (809) 840-8257
             </Button>
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button 
+              size="lg" 
+              className="bg-white text-blue-600 hover:bg-gray-100"
+              onClick={handleEmailClick}
+            >
               Email: info@jontours.com
             </Button>
           </div>
@@ -438,7 +459,7 @@ const Index = () => {
           <div>
             <h4 className="font-semibold mb-4">Contacto</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>📱 +1 (809) 555-0123</li>
+              <li>📱 +1 (809) 840-8257</li>
               <li>✉️ info@jontours.com</li>
               <li>🕒 7:00 AM - 10:00 PM</li>
             </ul>
