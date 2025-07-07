@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, ArrowLeft, Phone, Mail, Clock, MessageCircle, Send, MapPin as Location } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Contacto = () => {
   const navigate = useNavigate();
@@ -29,8 +31,29 @@ const Contacto = () => {
     e.preventDefault();
     setSubmitting(true);
 
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      console.log('Enviando mensaje:', formData);
+      
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .insert([
+          {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone || null,
+            subject: formData.subject,
+            message: formData.message,
+            status: 'unread'
+          }
+        ]);
+
+      if (error) {
+        console.error('Error al guardar mensaje:', error);
+        throw error;
+      }
+
+      console.log('Mensaje guardado exitosamente:', data);
+
       toast({
         title: "¡Mensaje enviado!",
         description: "Gracias por contactarnos. Te responderemos pronto.",
@@ -43,9 +66,16 @@ const Contacto = () => {
         subject: '',
         message: ''
       });
-      
+    } catch (error) {
+      console.error('Error completo:', error);
+      toast({
+        title: "Error al enviar mensaje",
+        description: "Hubo un problema. Por favor intenta de nuevo.",
+        variant: "destructive"
+      });
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
