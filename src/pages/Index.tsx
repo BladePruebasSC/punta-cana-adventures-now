@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Star, Clock, Users, Filter } from 'lucide-react';
+import { Search, MapPin, Star, Clock, Users, Filter, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,7 @@ const Index = () => {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: 'Todos los Tours', count: 0 },
     { id: 'aventura', name: 'Aventura', count: 0 },
@@ -123,13 +124,63 @@ const Index = () => {
                 <p className="text-sm text-gray-600">Experiencias Auténticas</p>
               </div>
             </div>
+            
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
               <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
               <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
               <a href="/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button 
+              className="md:hidden p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
+            </button>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-4">
+              <nav className="flex flex-col space-y-4">
+                <a 
+                  href="#tours" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Tours
+                </a>
+                <a 
+                  href="/nosotros" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Nosotros
+                </a>
+                <a 
+                  href="/contacto" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Contacto
+                </a>
+                <a 
+                  href="/dashboard" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </a>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
@@ -339,10 +390,10 @@ const Index = () => {
             Contacta con nuestros expertos locales para crear tu experiencia perfecta
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
               WhatsApp +1 (809) 555-0123
             </Button>
-            <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
               Email: info@jontours.com
             </Button>
           </div>
