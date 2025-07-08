@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Users, Filter, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -121,7 +122,10 @@ const Index = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleReserveNow = (tourId: string) => {
+  const handleReserveNow = (tourId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     navigate(`/reservar/${tourId}`);
   };
 
@@ -389,8 +393,14 @@ const Index = () => {
                             </CarouselItem>
                           ))}
                         </CarouselContent>
-                        <CarouselPrevious className="left-2" />
-                        <CarouselNext className="right-2" />
+                        <CarouselPrevious 
+                          className="left-2" 
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <CarouselNext 
+                          className="right-2" 
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </Carousel>
                     ) : (
                       <img 
@@ -452,10 +462,7 @@ const Index = () => {
                     
                     <Button 
                       className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReserveNow(tour.id);
-                      }}
+                      onClick={(e) => handleReserveNow(tour.id, e)}
                     >
                       Reservar Ahora
                     </Button>
