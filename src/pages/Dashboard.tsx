@@ -1,18 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, Users, Mail, Phone, MessageSquare, Check, X, Search, Filter, Eye, ExternalLink } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Reservation {
   id: string;
+  tour_id: string;
   name: string;
   email: string;
   phone: string;
@@ -21,11 +21,10 @@ interface Reservation {
   special_requests: string | null;
   status: string;
   created_at: string;
-  tour_id: string;
-  posts?: {
+  posts: {
     title: string;
     price: number;
-  };
+  } | null;
 }
 
 interface ContactMessage {
@@ -35,25 +34,49 @@ interface ContactMessage {
   phone: string | null;
   subject: string;
   message: string;
-  status: string;
+  status: string | null;
   created_at: string;
 }
 
 const Dashboard = () => {
-  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages'>('reservations');
+  const { toast } = useToast();
+
+  // Simple password authentication
+  const ADMIN_PASSWORD = 'jon2024admin';
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      toast({
+        title: "Bienvenido",
+        description: "Acceso autorizado al dashboard",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Contraseña incorrecta",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchData = async () => {
     try {
-      // Fetch reservations with tour info
+      // Fetch reservations with tour details
       const { data: reservationsData, error: reservationsError } = await supabase
         .from('reservations')
         .select(`
@@ -75,7 +98,7 @@ const Dashboard = () => {
         .order('created_at', { ascending: false });
 
       if (messagesError) throw messagesError;
-      setMessages(messagesData || []);
+      setContactMessages(messagesData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -99,32 +122,73 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Update local state
-      setReservations(prev => 
-        prev.map(reservation => 
-          reservation.id === id ? { ...reservation, status } : reservation
-        )
-      );
+      setReservations(prev => prev.map(reservation => 
+        reservation.id === id ? { ...reservation, status } : reservation
+      ));
 
       toast({
         title: "Estado actualizado",
-        description: "El estado de la reserva ha sido actualizado",
+        description: `Reserva ${status === 'confirmed' ? 'confirmada' : 'rechazada'} exitosamente`,
       });
 
-      // Si se aprueba la reserva, enviar confirmación por WhatsApp
+      // If confirming, send WhatsApp message to customer
       if (status === 'confirmed') {
         const reservation = reservations.find(r => r.id === id);
         if (reservation) {
-          sendWhatsAppConfirmation(reservation);
+          sendConfirmationWhatsApp(reservation);
         }
       }
 
     } catch (error) {
-      console.error('Error updating reservation status:', error);
+      console.error('Error updating reservation:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: "No se pudo actualizar el estado de la reserva",
         variant: "destructive",
       });
+    }
+  };
+
+  const sendConfirmationWhatsApp = (reservation: Reservation) => {
+    const message = `🎉 *RESERVA CONFIRMADA - Jon Tours and Adventure* 🎉
+
+¡Hola ${reservation.name}! ✨
+
+Tu reserva ha sido confirmada exitosamente:
+
+📋 *Detalles de tu Tour:*
+• Tour: ${reservation.posts?.title || 'Tour no disponible'}
+• Fecha: ${reservation.date}
+• Huéspedes: ${reservation.guests}
+• Total: $${reservation.posts ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}
+
+📍 *Próximos pasos:*
+• Te contactaremos 24h antes con el punto de encuentro
+• Recuerda traer documento de identidad
+• Usa ropa cómoda y protector solar
+
+${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_requests}\n\n` : ''}¡Estamos emocionados de tenerte en esta aventura! 🌴
+
+*Jon Tours and Adventure*
++1 (809) 840-8257`;
+
+    const phoneNumber = reservation.phone.replace(/[^\d]/g, '');
+    const encodedMessage = encodeURIComponent(message);
+    
+    // iOS-friendly WhatsApp redirect
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // For iOS, use whatsapp:// protocol first
+      window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+      
+      // Fallback to web version after a short delay if the app doesn't open
+      setTimeout(() => {
+        const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        window.open(fallbackUrl, '_blank');
+      }, 1500);
+    } else {
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
     }
   };
 
@@ -138,85 +202,104 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Update local state
-      setMessages(prev => 
-        prev.map(message => 
-          message.id === id ? { ...message, status } : message
-        )
-      );
+      setContactMessages(prev => prev.map(message => 
+        message.id === id ? { ...message, status } : message
+      ));
 
       toast({
         title: "Estado actualizado",
-        description: "El estado del mensaje ha sido actualizado",
+        description: `Mensaje marcado como ${status === 'read' ? 'leído' : 'pendiente'}`,
       });
 
     } catch (error) {
-      console.error('Error updating message status:', error);
+      console.error('Error updating message:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: "No se pudo actualizar el estado del mensaje",
         variant: "destructive",
       });
     }
   };
 
-  const sendWhatsAppConfirmation = (reservation: Reservation) => {
-    const tourTitle = reservation.posts?.title || 'Tour';
-    const totalPrice = reservation.posts?.price ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00';
-    
-    const confirmationMessage = `🎉 *RESERVA CONFIRMADA - Jon Tours and Adventure* 🎉
-
-¡Hola ${reservation.name}! Tu reserva ha sido confirmada exitosamente.
-
-📋 *Detalles confirmados:*
-• Tour: ${tourTitle}
-• Fecha: ${reservation.date}
-• Huéspedes: ${reservation.guests}
-• Total: $${totalPrice}
-
-${reservation.special_requests ? `📝 *Tus solicitudes especiales:*\n${reservation.special_requests}\n\n` : ''}📞 Nos pondremos en contacto contigo 24-48 horas antes del tour para confirmar la hora y punto de encuentro.
-
-¡Esperamos verte pronto para esta increíble aventura! 🌴
-
-*Jon Tours and Adventure*
-+1 (809) 840-8257`;
-
-    // Limpiar el número de teléfono y crear el enlace de WhatsApp
-    const cleanPhone = reservation.phone.replace(/\D/g, '');
-    const phoneNumber = cleanPhone.startsWith('1') ? cleanPhone : `1${cleanPhone}`;
-    const encodedMessage = encodeURIComponent(confirmationMessage);
-    
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge className="bg-green-500">Confirmada</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rechazada</Badge>;
+      default:
+        return <Badge variant="secondary">Pendiente</Badge>;
+    }
   };
 
-  // Filter functions
-  const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch = searchTerm === '' || 
-      reservation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (reservation.posts?.title || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || reservation.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const getMessageStatusBadge = (status: string | null) => {
+    switch (status) {
+      case 'read':
+        return <Badge className="bg-green-500">Leído</Badge>;
+      default:
+        return <Badge variant="secondary">Nuevo</Badge>;
+    }
+  };
 
-  const filteredMessages = messages.filter(message => {
-    const matchesSearch = searchTerm === '' || 
-      message.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || message.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Jon Tours Dashboard
+            </CardTitle>
+            <CardDescription>
+              Ingresa la contraseña para acceder
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+              >
+                Ingresar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando dashboard...</p>
+          <p className="text-gray-600">Cargando datos...</p>
         </div>
       </div>
     );
@@ -224,369 +307,220 @@ ${reservation.special_requests ? `📝 *Tus solicitudes especiales:*\n${reservat
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Dashboard - Jon Tours
-                </h1>
-                <p className="text-sm text-gray-600 hidden sm:block">Panel de administración</p>
-              </div>
+      <header className="bg-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Dashboard - Jon Tours
+            </h1>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+              <Button
+                variant={activeTab === 'reservations' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('reservations')}
+                className="text-sm"
+              >
+                Reservas ({reservations.length})
+              </Button>
+              <Button
+                variant={activeTab === 'messages' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('messages')}
+                className="text-sm"
+              >
+                Mensajes ({contactMessages.length})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAuthenticated(false);
+                  setPassword('');
+                }}
+                className="text-sm"
+              >
+                Cerrar Sesión
+              </Button>
             </div>
-            
-            <Button 
-              onClick={() => window.location.href = '/'}
-              variant="outline"
-              className="text-sm"
-            >
-              Volver al sitio
-            </Button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Reservas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{reservations.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Reservas Pendientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
-                {reservations.filter(r => r.status === 'pending').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Reservas Confirmadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {reservations.filter(r => r.status === 'confirmed').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Mensajes Nuevos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {messages.filter(m => m.status === 'unread').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'reservations' ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Reservas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{reservations.length}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Confirmadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                    {reservations.filter(r => r.status === 'confirmed').length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Pendientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                    {reservations.filter(r => r.status === 'pending').length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Rechazadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {reservations.filter(r => r.status === 'rejected').length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+            <div className="space-y-4 sm:space-y-6">
+              {reservations.map((reservation) => (
+                <Card key={reservation.id} className="overflow-hidden">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg sm:text-xl">
+                          {reservation.posts?.title || 'Tour no disponible'}
+                        </CardTitle>
+                        <CardDescription className="text-sm">
+                          Reserva de {reservation.name} • {new Date(reservation.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 sm:mt-0">
+                        {getStatusBadge(reservation.status)}
+                        <div className="text-lg sm:text-xl font-bold text-green-600">
+                          ${reservation.posts ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <span>{reservation.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-green-600" />
+                        <span>{reservation.guests} huéspedes</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-purple-600" />
+                        <span className="truncate">{reservation.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-orange-600" />
+                        <span>{reservation.phone}</span>
+                      </div>
+                    </div>
+                    
+                    {reservation.special_requests && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="w-4 h-4 text-gray-600 mt-0.5" />
+                          <div>
+                            <div className="font-medium text-sm text-gray-700">Solicitudes especiales:</div>
+                            <div className="text-sm text-gray-600 mt-1">{reservation.special_requests}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {reservation.status === 'pending' && (
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
+                          className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          Confirmar Reserva
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => updateReservationStatus(reservation.id, 'rejected')}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Rechazar
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('all')}
-              size="sm"
-            >
-              Todos
-            </Button>
-            <Button
-              variant={statusFilter === 'pending' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('pending')}
-              size="sm"
-            >
-              Pendientes
-            </Button>
-            <Button
-              variant={statusFilter === 'confirmed' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('confirmed')}
-              size="sm"
-            >
-              Confirmados
-            </Button>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <Tabs defaultValue="reservations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="reservations" className="text-sm">
-              Reservas ({filteredReservations.length})
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="text-sm">
-              Mensajes ({filteredMessages.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Reservations Tab */}
-          <TabsContent value="reservations">
-            <Card>
-              <CardHeader>
-                <CardTitle>Reservas de Tours</CardTitle>
-                <CardDescription>
-                  Gestiona las reservas recibidas de los clientes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[120px]">Cliente</TableHead>
-                        <TableHead className="hidden sm:table-cell">Tour</TableHead>
-                        <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                        <TableHead className="hidden md:table-cell">Huéspedes</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredReservations.map((reservation) => (
-                        <TableRow key={reservation.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{reservation.name}</div>
-                              <div className="text-sm text-gray-500 sm:hidden">
-                                {reservation.posts?.title || 'Tour'}
-                              </div>
-                              <div className="text-sm text-gray-500">{reservation.email}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <div>
-                              <div className="font-medium">{reservation.posts?.title || 'Tour'}</div>
-                              <div className="text-sm text-gray-500">
-                                ${reservation.posts?.price ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{reservation.date}</TableCell>
-                          <TableCell className="hidden md:table-cell">{reservation.guests}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                reservation.status === 'confirmed' ? 'default' : 
-                                reservation.status === 'pending' ? 'secondary' : 
-                                'destructive'
-                              }
-                            >
-                              {reservation.status === 'confirmed' ? 'Confirmada' : 
-                               reservation.status === 'pending' ? 'Pendiente' : 
-                               'Cancelada'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              {reservation.status === 'pending' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
-                                    className="bg-green-600 hover:bg-green-700 text-xs"
-                                  >
-                                    <Check className="w-3 h-3 mr-1" />
-                                    Aprobar
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => updateReservationStatus(reservation.id, 'cancelled')}
-                                    className="text-xs"
-                                  >
-                                    <X className="w-3 h-3 mr-1" />
-                                    Rechazar
-                                  </Button>
-                                </>
-                              )}
-                              
-                              {reservation.status === 'confirmed' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => sendWhatsAppConfirmation(reservation)}
-                                  className="text-xs"
-                                >
-                                  <ExternalLink className="w-3 h-3 mr-1" />
-                                  WhatsApp
-                                </Button>
-                              )}
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="text-xs">
-                                    <Eye className="w-3 h-3 mr-1" />
-                                    Ver
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Detalles de la Reserva</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="font-semibold">Información del Cliente</h4>
-                                        <p><strong>Nombre:</strong> {reservation.name}</p>
-                                        <p><strong>Email:</strong> {reservation.email}</p>
-                                        <p><strong>Teléfono:</strong> {reservation.phone}</p>
-                                      </div>
-                                      <div>
-                                        <h4 className="font-semibold">Detalles del Tour</h4>
-                                        <p><strong>Tour:</strong> {reservation.posts?.title || 'Tour'}</p>
-                                        <p><strong>Fecha:</strong> {reservation.date}</p>
-                                        <p><strong>Huéspedes:</strong> {reservation.guests}</p>
-                                        <p><strong>Precio total:</strong> ${reservation.posts?.price ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}</p>
-                                      </div>
-                                    </div>
-                                    {reservation.special_requests && (
-                                      <div>
-                                        <h4 className="font-semibold">Solicitudes Especiales</h4>
-                                        <p className="text-gray-600">{reservation.special_requests}</p>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <h4 className="font-semibold">Fecha de Reserva</h4>
-                                      <p>{new Date(reservation.created_at).toLocaleString()}</p>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Messages Tab */}
-          <TabsContent value="messages">
+        ) : (
+          <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Mensajes de Contacto</CardTitle>
                 <CardDescription>
-                  Gestiona los mensajes recibidos del formulario de contacto
+                  {contactMessages.length} mensajes recibidos
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[120px]">Remitente</TableHead>
-                        <TableHead className="hidden sm:table-cell">Asunto</TableHead>
-                        <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMessages.map((message) => (
-                        <TableRow key={message.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{message.name}</div>
-                              <div className="text-sm text-gray-500">{message.email}</div>
-                              <div className="text-sm text-gray-500 sm:hidden">
-                                {message.subject}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <div className="max-w-xs truncate">{message.subject}</div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {new Date(message.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={message.status === 'read' ? 'default' : 'secondary'}>
-                              {message.status === 'read' ? 'Leído' : 'Nuevo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              {message.status === 'unread' && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => updateMessageStatus(message.id, 'read')}
-                                  className="text-xs"
-                                >
-                                  Marcar Leído
-                                </Button>
-                              )}
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="text-xs">
-                                    <Eye className="w-3 h-3 mr-1" />
-                                    Ver
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Mensaje de Contacto</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-semibold">De: {message.name}</h4>
-                                      <p className="text-gray-600">{message.email}</p>
-                                      {message.phone && <p className="text-gray-600">{message.phone}</p>}
-                                    </div>
-                                    <div>
-                                      <h4 className="font-semibold">Asunto</h4>
-                                      <p>{message.subject}</p>
-                                    </div>
-                                    <div>
-                                      <h4 className="font-semibold">Mensaje</h4>
-                                      <p className="whitespace-pre-wrap">{message.message}</p>
-                                    </div>
-                                    <div>
-                                      <h4 className="font-semibold">Fecha</h4>
-                                      <p>{new Date(message.created_at).toLocaleString()}</p>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+
+            <div className="space-y-4">
+              {contactMessages.map((message) => (
+                <Card key={message.id}>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{message.subject}</CardTitle>
+                        <CardDescription>
+                          De: {message.name} ({message.email}) • {new Date(message.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      {getMessageStatusBadge(message.status)}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    {message.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-orange-600" />
+                        <span>{message.phone}</span>
+                      </div>
+                    )}
+                    
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-700">{message.message}</p>
+                    </div>
+                    
+                    {message.status !== 'read' && (
+                      <Button
+                        onClick={() => updateMessageStatus(message.id, 'read')}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Marcar como leído
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

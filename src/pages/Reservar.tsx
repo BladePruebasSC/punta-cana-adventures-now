@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Users, Clock, Star, ArrowLeft } from 'lucide-react';
@@ -134,11 +135,28 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       const phoneNumber = '18098408257';
       const encodedMessage = encodeURIComponent(whatsappMessage);
       
-      // Redirigir a WhatsApp después de un breve delay
+      // iOS-friendly WhatsApp redirect
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
       setTimeout(() => {
-        window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-        navigate('/');
-      }, 2000);
+        if (isIOS) {
+          // For iOS, use whatsapp:// protocol first
+          window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+          
+          // Fallback to web version after a short delay if the app doesn't open
+          setTimeout(() => {
+            const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+            window.open(fallbackUrl, '_blank');
+          }, 1500);
+        } else {
+          window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+        }
+        
+        // Navigate back after WhatsApp redirect
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }, 1000);
 
     } catch (error) {
       console.error('Error creating reservation:', error);

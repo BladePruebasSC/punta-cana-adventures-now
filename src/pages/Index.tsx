@@ -147,9 +147,23 @@ const Index = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = '18098408257'; // Número sin espacios ni caracteres especiales
+    const phoneNumber = '18098408257';
     const message = encodeURIComponent('Hola, me interesa información sobre sus tours en Punta Cana');
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+    
+    // iOS-friendly WhatsApp redirect
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // For iOS, use whatsapp:// protocol first, fallback to web
+      window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
+      
+      // Fallback to web version after a short delay if the app doesn't open
+      setTimeout(() => {
+        window.open(`https://web.whatsapp.com/send?phone=${phoneNumber}&text=${message}`, '_blank');
+      }, 1000);
+    } else {
+      window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+    }
   };
 
   const handleEmailClick = () => {
@@ -381,27 +395,23 @@ const Index = () => {
                 >
                   <div className="relative overflow-hidden">
                     {displayImages.length > 1 ? (
-                      <Carousel className="w-full">
-                        <CarouselContent>
-                          {displayImages.map((image, index) => (
-                            <CarouselItem key={image.id || index}>
-                              <img 
-                                src={image.image_url} 
-                                alt={image.alt_text || tour.title}
-                                className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                              />
-                            </CarouselItem>
-                          ))}
-                        </CarouselContent>
-                        <CarouselPrevious 
-                          className="left-2" 
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <CarouselNext 
-                          className="right-2" 
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Carousel>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {displayImages.map((image, index) => (
+                              <CarouselItem key={image.id || index}>
+                                <img 
+                                  src={image.image_url} 
+                                  alt={image.alt_text || tour.title}
+                                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="left-2" />
+                          <CarouselNext className="right-2" />
+                        </Carousel>
+                      </div>
                     ) : (
                       <img 
                         src={displayImages[0].image_url} 
