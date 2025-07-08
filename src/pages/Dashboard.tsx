@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Reservation {
   id: string;
@@ -38,18 +40,48 @@ interface ContactMessage {
   created_at: string;
 }
 
+interface Post {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  price: number;
+  duration: string;
+  rating: number;
+  category: string;
+  group_size: string;
+  highlights: string[];
+  created_at: string;
+}
+
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reservations' | 'messages'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts'>('reservations');
+  const [showAddPost, setShowAddPost] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const { toast } = useToast();
 
-  // Simple password authentication
-  const ADMIN_PASSWORD = 'jon2024admin';
+  // Changed password to jontours2025
+  const ADMIN_PASSWORD = 'jontours2025';
+
+  const [newPost, setNewPost] = useState({
+    title: '',
+    description: '',
+    image_url: '',
+    price: 0,
+    duration: '',
+    rating: 5,
+    category: 'aventura',
+    group_size: '',
+    highlights: ['']
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -99,6 +131,15 @@ const Dashboard = () => {
 
       if (messagesError) throw messagesError;
       setContactMessages(messagesData || []);
+
+      // Fetch posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (postsError) throw postsError;
+      setPosts(postsData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -221,6 +262,164 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
     }
   };
 
+  const handleAddPost = async () => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .insert([{
+          title: newPost.title,
+          description: newPost.description,
+          image_url: newPost.image_url,
+          price: newPost.price,
+          duration: newPost.duration,
+          rating: newPost.rating,
+          category: newPost.category,
+          group_size: newPost.group_size,
+          highlights: newPost.highlights.filter(h => h.trim() !== '')
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour agregado",
+        description: "El tour se ha agregado exitosamente",
+      });
+
+      setShowAddPost(false);
+      setNewPost({
+        title: '',
+        description: '',
+        image_url: '',
+        price: 0,
+        duration: '',
+        rating: 5,
+        category: 'aventura',
+        group_size: '',
+        highlights: ['']
+      });
+      fetchData();
+
+    } catch (error) {
+      console.error('Error adding post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({
+          title: editingPost.title,
+          description: editingPost.description,
+          image_url: editingPost.image_url,
+          price: editingPost.price,
+          duration: editingPost.duration,
+          rating: editingPost.rating,
+          category: editingPost.category,
+          group_size: editingPost.group_size,
+          highlights: editingPost.highlights.filter(h => h.trim() !== '')
+        })
+        .eq('id', editingPost.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour actualizado",
+        description: "El tour se ha actualizado exitosamente",
+      });
+
+      setEditingPost(null);
+      fetchData();
+
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour eliminado",
+        description: "El tour se ha eliminado exitosamente",
+      });
+
+      fetchData();
+
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addHighlight = (isEditing = false) => {
+    if (isEditing && editingPost) {
+      setEditingPost({
+        ...editingPost,
+        highlights: [...editingPost.highlights, '']
+      });
+    } else {
+      setNewPost({
+        ...newPost,
+        highlights: [...newPost.highlights, '']
+      });
+    }
+  };
+
+  const updateHighlight = (index: number, value: string, isEditing = false) => {
+    if (isEditing && editingPost) {
+      const newHighlights = [...editingPost.highlights];
+      newHighlights[index] = value;
+      setEditingPost({
+        ...editingPost,
+        highlights: newHighlights
+      });
+    } else {
+      const newHighlights = [...newPost.highlights];
+      newHighlights[index] = value;
+      setNewPost({
+        ...newPost,
+        highlights: newHighlights
+      });
+    }
+  };
+
+  const removeHighlight = (index: number, isEditing = false) => {
+    if (isEditing && editingPost) {
+      setEditingPost({
+        ...editingPost,
+        highlights: editingPost.highlights.filter((_, i) => i !== index)
+      });
+    } else {
+      setNewPost({
+        ...newPost,
+        highlights: newPost.highlights.filter((_, i) => i !== index)
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -313,7 +512,7 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
               Dashboard - Jon Tours
             </h1>
-            <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
               <Button
                 variant={activeTab === 'reservations' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('reservations')}
@@ -327,6 +526,21 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                 className="text-sm"
               >
                 Mensajes ({contactMessages.length})
+              </Button>
+              <Button
+                variant={activeTab === 'posts' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('posts')}
+                className="text-sm"
+              >
+                Tours ({posts.length})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/')}
+                className="text-sm flex items-center gap-2"
+              >
+                <Home className="w-4 h-4" />
+                Inicio
               </Button>
               <Button
                 variant="outline"
@@ -344,7 +558,7 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'reservations' ? (
+        {activeTab === 'reservations' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <Card>
@@ -468,7 +682,9 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
               ))}
             </div>
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'messages' && (
           <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
@@ -515,6 +731,384 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                         Marcar como leído
                       </Button>
                     )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'posts' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Gestión de Tours</h2>
+              <Dialog open={showAddPost} onOpenChange={setShowAddPost}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 mt-4 sm:mt-0">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Tour
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Agregar Nuevo Tour</DialogTitle>
+                    <DialogDescription>
+                      Completa la información del nuevo tour
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="title">Título</Label>
+                        <Input
+                          id="title"
+                          value={newPost.title}
+                          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                          placeholder="Nombre del tour"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="price">Precio ($)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={newPost.price}
+                          onChange={(e) => setNewPost({ ...newPost, price: Number(e.target.value) })}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="description">Descripción</Label>
+                      <Textarea
+                        id="description"
+                        value={newPost.description}
+                        onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                        placeholder="Descripción del tour"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="image_url">URL de la imagen</Label>
+                      <Input
+                        id="image_url"
+                        value={newPost.image_url}
+                        onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="duration">Duración</Label>
+                        <Input
+                          id="duration"
+                          value={newPost.duration}
+                          onChange={(e) => setNewPost({ ...newPost, duration: e.target.value })}
+                          placeholder="8 horas"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="group_size">Tamaño del grupo</Label>
+                        <Input
+                          id="group_size"
+                          value={newPost.group_size}
+                          onChange={(e) => setNewPost({ ...newPost, group_size: e.target.value })}
+                          placeholder="Hasta 8 personas"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="rating">Calificación</Label>
+                        <Input
+                          id="rating"
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="0.1"
+                          value={newPost.rating}
+                          onChange={(e) => setNewPost({ ...newPost, rating: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="category">Categoría</Label>
+                      <Select
+                        value={newPost.category}
+                        onValueChange={(value) => setNewPost({ ...newPost, category: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aventura">Aventura</SelectItem>
+                          <SelectItem value="playa">Playa & Mar</SelectItem>
+                          <SelectItem value="cultura">Cultura</SelectItem>
+                          <SelectItem value="naturaleza">Naturaleza</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Highlights</Label>
+                      {newPost.highlights.map((highlight, index) => (
+                        <div key={index} className="flex gap-2 mt-2">
+                          <Input
+                            value={highlight}
+                            onChange={(e) => updateHighlight(index, e.target.value)}
+                            placeholder={`Highlight ${index + 1}`}
+                          />
+                          {newPost.highlights.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeHighlight(index)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addHighlight()}
+                        className="mt-2"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar Highlight
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddPost(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleAddPost}>
+                      Agregar Tour
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post) => (
+                <Card key={post.id} className="overflow-hidden">
+                  <div className="relative">
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600">
+                        ${post.price}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <CardHeader>
+                    <CardTitle className="text-lg">{post.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {post.description}
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{post.duration}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        <span>{post.group_size}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {post.highlights.slice(0, 2).map((highlight, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {highlight}
+                        </Badge>
+                      ))}
+                      {post.highlights.length > 2 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{post.highlights.length - 2} más
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setEditingPost(post)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Editar
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Editar Tour</DialogTitle>
+                          </DialogHeader>
+                          
+                          {editingPost && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor="edit-title">Título</Label>
+                                  <Input
+                                    id="edit-title"
+                                    value={editingPost.title}
+                                    onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-price">Precio ($)</Label>
+                                  <Input
+                                    id="edit-price"
+                                    type="number"
+                                    value={editingPost.price}
+                                    onChange={(e) => setEditingPost({ ...editingPost, price: Number(e.target.value) })}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-description">Descripción</Label>
+                                <Textarea
+                                  id="edit-description"
+                                  value={editingPost.description}
+                                  onChange={(e) => setEditingPost({ ...editingPost, description: e.target.value })}
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-image">URL de la imagen</Label>
+                                <Input
+                                  id="edit-image"
+                                  value={editingPost.image_url}
+                                  onChange={(e) => setEditingPost({ ...editingPost, image_url: e.target.value })}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <Label htmlFor="edit-duration">Duración</Label>
+                                  <Input
+                                    id="edit-duration"
+                                    value={editingPost.duration}
+                                    onChange={(e) => setEditingPost({ ...editingPost, duration: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-group">Tamaño del grupo</Label>
+                                  <Input
+                                    id="edit-group"
+                                    value={editingPost.group_size}
+                                    onChange={(e) => setEditingPost({ ...editingPost, group_size: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-rating">Calificación</Label>
+                                  <Input
+                                    id="edit-rating"
+                                    type="number"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={editingPost.rating}
+                                    onChange={(e) => setEditingPost({ ...editingPost, rating: Number(e.target.value) })}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-category">Categoría</Label>
+                                <Select
+                                  value={editingPost.category}
+                                  onValueChange={(value) => setEditingPost({ ...editingPost, category: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="aventura">Aventura</SelectItem>
+                                    <SelectItem value="playa">Playa & Mar</SelectItem>
+                                    <SelectItem value="cultura">Cultura</SelectItem>
+                                    <SelectItem value="naturaleza">Naturaleza</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label>Highlights</Label>
+                                {editingPost.highlights.map((highlight, index) => (
+                                  <div key={index} className="flex gap-2 mt-2">
+                                    <Input
+                                      value={highlight}
+                                      onChange={(e) => updateHighlight(index, e.target.value, true)}
+                                    />
+                                    {editingPost.highlights.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeHighlight(index, true)}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addHighlight(true)}
+                                  className="mt-2"
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Agregar Highlight
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditingPost(null)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleUpdatePost}>
+                              Actualizar
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeletePost(post.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
