@@ -63,6 +63,16 @@ interface SiteSetting {
   updated_at: string;
 }
 
+interface TourImage {
+  id: string;
+  tour_id: string;
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+  order_index: number;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -72,11 +82,19 @@ const Dashboard = () => {
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSetting[]>([]);
+  const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings'>('reservations');
   const [showAddPost, setShowAddPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [backgroundImage, setBackgroundImage] = useState('');
+  const [showImageManager, setShowImageManager] = useState(false);
+  const [selectedTourForImages, setSelectedTourForImages] = useState<Post | null>(null);
+  const [showAddImageDialog, setShowAddImageDialog] = useState(false);
+  const [newImageData, setNewImageData] = useState({
+    imageUrl: '',
+    altText: ''
+  });
   const { toast } = useToast();
 
   // Changed password to jontours2025
@@ -152,6 +170,25 @@ const Dashboard = () => {
       if (postsError) throw postsError;
       setPosts(postsData || []);
 
+      // Fetch tour images
+      const { data: imagesData, error: imagesError } = await supabase
+        .from('tour_images')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (imagesError) throw imagesError;
+
+      // Group images by tour_id
+      const imagesByTour: Record<string, TourImage[]> = {};
+      (imagesData || []).forEach(image => {
+        if (!imagesByTour[image.tour_id]) {
+          imagesByTour[image.tour_id] = [];
+        }
+        imagesByTour[image.tour_id].push(image);
+      });
+      
+      setTourImages(imagesByTour);
+
       // Fetch site settings
       const { data: settingsData, error: settingsError } = await supabase
         .from('site_settings')
@@ -181,6 +218,9 @@ const Dashboard = () => {
 
   const updateSiteSetting = async (key: string, value: string) => {
     try {
+      console.log(`Actualizando configuración: ${key}`);
+      console.log(`Valor a guardar (longitud: ${value.length}):`, value.substring(0, 100) + '...');
+      
       const { error } = await supabase
         .from('site_settings')
         .upsert({
@@ -191,7 +231,12 @@ const Dashboard = () => {
           onConflict: 'setting_key'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error de Supabase:', error);
+        throw error;
+      }
+
+      console.log('Configuración actualizada exitosamente en la base de datos');
 
       toast({
         title: "Configuración actualizada",
@@ -220,9 +265,27 @@ const Dashboard = () => {
 
     } catch (error) {
       console.error('Error updating site setting:', error);
+      
+      // Proporcionar información más específica del error
+      let errorMessage = "No se pudo actualizar la configuración";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('base64')) {
+          errorMessage = "La imagen es demasiado grande. Intenta con una imagen más pequeña.";
+        } else if (error.message.includes('storage')) {
+          errorMessage = "Error de almacenamiento. Intenta nuevamente.";
+        } else if (error.message.includes('network')) {
+          errorMessage = "Error de conexión. Verifica tu internet.";
+        } else if (error.message.includes('permission') || error.message.includes('policy')) {
+          errorMessage = "Error de permisos. Contacta al administrador.";
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "No se pudo actualizar la configuración",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -344,7 +407,8 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
 
   const handleAddPost = async () => {
     try {
-      const { error } = await supabase
+      // Insertar el tour en posts
+      const { data: postData, error: postError } = await supabase
         .from('posts')
         .insert([{
           title: newPost.title,
@@ -356,9 +420,29 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
           category: newPost.category,
           group_size: newPost.group_size,
           highlights: newPost.highlights.filter(h => h.trim() !== '')
-        }]);
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (postError) throw postError;
+
+      // Si hay una imagen, insertarla en tour_images como imagen principal
+      if (newPost.image_url && postData) {
+        const { error: imageError } = await supabase
+          .from('tour_images')
+          .insert([{
+            tour_id: postData.id,
+            image_url: newPost.image_url,
+            alt_text: newPost.title,
+            is_primary: true,
+            order_index: 0
+          }]);
+
+        if (imageError) {
+          console.error('Error inserting tour image:', imageError);
+          // No lanzar error aquí para no revertir la inserción del tour
+        }
+      }
 
       toast({
         title: "Tour agregado",
@@ -393,7 +477,8 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
     if (!editingPost) return;
 
     try {
-      const { error } = await supabase
+      // Actualizar el tour en posts
+      const { error: postError } = await supabase
         .from('posts')
         .update({
           title: editingPost.title,
@@ -408,7 +493,48 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
         })
         .eq('id', editingPost.id);
 
-      if (error) throw error;
+      if (postError) throw postError;
+
+      // Actualizar la imagen principal en tour_images
+      if (editingPost.image_url) {
+        // Primero, verificar si ya existe una imagen principal para este tour
+        const { data: existingImage } = await supabase
+          .from('tour_images')
+          .select('id')
+          .eq('tour_id', editingPost.id)
+          .eq('is_primary', true)
+          .single();
+
+        if (existingImage) {
+          // Actualizar la imagen principal existente
+          const { error: imageError } = await supabase
+            .from('tour_images')
+            .update({
+              image_url: editingPost.image_url,
+              alt_text: editingPost.title
+            })
+            .eq('id', existingImage.id);
+
+          if (imageError) {
+            console.error('Error updating tour image:', imageError);
+          }
+        } else {
+          // Crear nueva imagen principal
+          const { error: imageError } = await supabase
+            .from('tour_images')
+            .insert([{
+              tour_id: editingPost.id,
+              image_url: editingPost.image_url,
+              alt_text: editingPost.title,
+              is_primary: true,
+              order_index: 0
+            }]);
+
+          if (imageError) {
+            console.error('Error inserting tour image:', imageError);
+          }
+        }
+      }
 
       toast({
         title: "Tour actualizado",
@@ -451,6 +577,107 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
         description: "No se pudo eliminar el tour",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleAddTourImage = async (tourId: string, imageUrl: string, altText: string) => {
+    try {
+      // Obtener el siguiente order_index
+      const tourImagesList = tourImages[tourId] || [];
+      const nextOrderIndex = tourImagesList.length;
+
+      const { error } = await supabase
+        .from('tour_images')
+        .insert([{
+          tour_id: tourId,
+          image_url: imageUrl,
+          alt_text: altText,
+          is_primary: false,
+          order_index: nextOrderIndex
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Imagen agregada",
+        description: "La imagen adicional se ha agregado exitosamente",
+      });
+
+      fetchData();
+
+    } catch (error) {
+      console.error('Error adding tour image:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar la imagen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTourImage = async (imageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tour_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Imagen eliminada",
+        description: "La imagen se ha eliminado exitosamente",
+      });
+
+      fetchData();
+
+    } catch (error) {
+      console.error('Error deleting tour image:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la imagen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateTourImageOrder = async (imageId: string, newOrderIndex: number) => {
+    try {
+      const { error } = await supabase
+        .from('tour_images')
+        .update({ order_index: newOrderIndex })
+        .eq('id', imageId);
+
+      if (error) throw error;
+
+      fetchData();
+
+    } catch (error) {
+      console.error('Error updating image order:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el orden de la imagen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddNewImage = async () => {
+    if (!selectedTourForImages || !newImageData.imageUrl || !newImageData.altText) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await handleAddTourImage(selectedTourForImages.id, newImageData.imageUrl, newImageData.altText);
+      setNewImageData({ imageUrl: '', altText: '' });
+      setShowAddImageDialog(false);
+    } catch (error) {
+      console.error('Error adding new image:', error);
     }
   };
 
@@ -880,12 +1107,13 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                     </div>
                     
                     <div>
-                      <Label htmlFor="image_url">URL de la imagen</Label>
-                      <Input
-                        id="image_url"
-                        value={newPost.image_url}
-                        onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
-                        placeholder="https://ejemplo.com/imagen.jpg"
+                      <Label htmlFor="image_url">Imagen del tour</Label>
+                      <ImageUpload
+                        currentImageUrl={newPost.image_url}
+                        onImageChange={(url) => setNewPost({ ...newPost, image_url: url })}
+                        label=""
+                        bucket="tour-images"
+                        maxSizeMB={10}
                       />
                     </div>
                     
@@ -1085,11 +1313,13 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                               </div>
                               
                               <div>
-                                <Label htmlFor="edit-image">URL de la imagen</Label>
-                                <Input
-                                  id="edit-image"
-                                  value={editingPost.image_url}
-                                  onChange={(e) => setEditingPost({ ...editingPost, image_url: e.target.value })}
+                                <Label htmlFor="edit-image">Imagen del tour</Label>
+                                <ImageUpload
+                                  currentImageUrl={editingPost.image_url}
+                                  onImageChange={(url) => setEditingPost({ ...editingPost, image_url: url })}
+                                  label=""
+                                  bucket="tour-images"
+                                  maxSizeMB={10}
                                 />
                               </div>
                               
@@ -1188,6 +1418,19 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                       </Dialog>
                       
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTourForImages(post);
+                          setShowImageManager(true);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        Imágenes
+                      </Button>
+                      
+                      <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDeletePost(post.id)}
@@ -1203,6 +1446,138 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
             </div>
           </div>
         )}
+
+        {/* Diálogo para gestionar imágenes adicionales */}
+        <Dialog open={showImageManager} onOpenChange={setShowImageManager}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gestionar Imágenes del Tour</DialogTitle>
+              <DialogDescription>
+                {selectedTourForImages?.title}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedTourForImages && (
+              <div className="space-y-6">
+                {/* Imagen principal */}
+                <div>
+                  <Label className="text-lg font-semibold">Imagen Principal</Label>
+                  <div className="mt-2 p-4 border rounded-lg">
+                    <img
+                      src={selectedTourForImages.image_url}
+                      alt={selectedTourForImages.title}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <p className="mt-2 text-sm text-gray-600">
+                      Esta imagen se actualiza desde la edición del tour
+                    </p>
+                  </div>
+                </div>
+
+                {/* Imágenes adicionales */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-lg font-semibold">Imágenes Adicionales</Label>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setShowAddImageDialog(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Agregar Imagen
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(tourImages[selectedTourForImages.id] || [])
+                      .filter(img => !img.is_primary)
+                      .sort((a, b) => a.order_index - b.order_index)
+                      .map((image) => (
+                        <div key={image.id} className="relative group">
+                          <img
+                            src={image.image_url}
+                            alt={image.alt_text}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteTourImage(image.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-600 truncate">{image.alt_text}</p>
+                        </div>
+                      ))}
+                  </div>
+                  
+                  {(tourImages[selectedTourForImages.id] || []).filter(img => !img.is_primary).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No hay imágenes adicionales para este tour</p>
+                      <p className="text-sm">Haz clic en "Agregar Imagen" para comenzar</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowImageManager(false)}>
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo para agregar nueva imagen adicional */}
+        <Dialog open={showAddImageDialog} onOpenChange={setShowAddImageDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Agregar Nueva Imagen</DialogTitle>
+              <DialogDescription>
+                Agrega una imagen adicional para {selectedTourForImages?.title}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-image">Imagen</Label>
+                <ImageUpload
+                  currentImageUrl={newImageData.imageUrl}
+                  onImageChange={(url) => setNewImageData({ ...newImageData, imageUrl: url })}
+                  label=""
+                  bucket="tour-images"
+                  maxSizeMB={10}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="new-alt-text">Texto Alternativo</Label>
+                <Input
+                  id="new-alt-text"
+                  value={newImageData.altText}
+                  onChange={(e) => setNewImageData({ ...newImageData, altText: e.target.value })}
+                  placeholder="Descripción de la imagen"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddImageDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddNewImage}>
+                Agregar Imagen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {activeTab === 'settings' && (
           <div className="space-y-6">

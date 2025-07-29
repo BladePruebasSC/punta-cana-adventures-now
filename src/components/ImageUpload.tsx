@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadImage, validateImageUrl } from '@/lib/imageUpload';
 
 interface ImageUploadProps {
   currentImageUrl?: string;
@@ -11,6 +12,7 @@ interface ImageUploadProps {
   label?: string;
   accept?: string;
   maxSizeMB?: number;
+  bucket?: 'site-images' | 'tour-images';
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -18,7 +20,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onImageChange,
   label = "Imagen",
   accept = "image/*",
-  maxSizeMB = 5
+  maxSizeMB = 5,
+  bucket = 'site-images'
 }) => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>(currentImageUrl || '');
@@ -26,6 +29,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Actualizar preview cuando cambie la imagen actual
+  React.useEffect(() => {
+    if (currentImageUrl) {
+      setPreviewUrl(currentImageUrl);
+      setUrlInput(currentImageUrl);
+    }
+  }, [currentImageUrl]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -54,24 +65,31 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     setUploading(true);
 
     try {
-      // Convert file to base64 for preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreviewUrl(result);
-        onImageChange(result);
-      };
-      reader.readAsDataURL(file);
+      // Upload file to Supabase Storage
+      const result = await uploadImage(file, bucket);
+      
+      if (result.error) {
+        toast({
+          title: "Error al subir imagen",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Set preview and notify parent
+      setPreviewUrl(result.url);
+      onImageChange(result.url);
 
       toast({
-        title: "Imagen cargada",
-        description: "La imagen se ha cargado correctamente",
+        title: "Imagen subida exitosamente",
+        description: "La imagen se ha subido y está lista para usar",
       });
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la imagen",
+        description: "No se pudo subir la imagen",
         variant: "destructive",
       });
     } finally {
@@ -89,22 +107,22 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return;
     }
 
-    // Basic URL validation
-    try {
-      new URL(urlInput);
-      setPreviewUrl(urlInput);
-      onImageChange(urlInput);
-      toast({
-        title: "URL actualizada",
-        description: "La imagen se ha actualizado correctamente",
-      });
-    } catch {
+    // Validate URL
+    if (!validateImageUrl(urlInput)) {
       toast({
         title: "URL inválida",
         description: "Por favor ingresa una URL válida",
         variant: "destructive",
       });
+      return;
     }
+
+    setPreviewUrl(urlInput);
+    onImageChange(urlInput);
+    toast({
+      title: "URL actualizada",
+      description: "La imagen se ha actualizado correctamente",
+    });
   };
 
   const clearImage = () => {
@@ -145,16 +163,29 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {/* File Upload */}
       {uploadMethod === 'file' && (
         <div className="space-y-2">
-          <Input
-            ref={fileInputRef}
-            type="file"
-            accept={accept}
-            onChange={handleFileSelect}
-            disabled={uploading}
-            className="cursor-pointer"
-          />
+          <div className="relative">
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept={accept}
+              onChange={handleFileSelect}
+              disabled={uploading}
+              className="cursor-pointer"
+            />
+            {uploading && (
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-md">
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Procesando imagen...
+                </div>
+              </div>
+            )}
+          </div>
           <p className="text-sm text-gray-500">
             Máximo {maxSizeMB}MB. Formatos: JPG, PNG, GIF, WebP
+          </p>
+          <p className="text-xs text-blue-600">
+            💡 Las imágenes se procesan localmente para mejor rendimiento
           </p>
         </div>
       )}
@@ -181,7 +212,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {/* Preview */}
       {previewUrl && (
         <div className="relative">
-          <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+          <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300">
             <img
               src={previewUrl}
               alt="Preview"
@@ -198,22 +229,32 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               type="button"
               variant="destructive"
               size="sm"
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 hover:bg-red-700"
               onClick={clearImage}
             >
               <X className="w-4 h-4" />
             </Button>
+            
+            {/* Info overlay */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
+              <p className="text-xs">
+                {previewUrl.startsWith('data:') ? 'Imagen procesada localmente' : 'Imagen desde URL'}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
-            Vista previa de la imagen
-          </p>
+          <div className="mt-2 flex items-center justify-between text-sm">
+            <span className="text-gray-500">Vista previa de la imagen</span>
+            {previewUrl.startsWith('data:') && (
+              <span className="text-blue-600 text-xs">✅ Lista para usar</span>
+            )}
+          </div>
         </div>
       )}
 
       {uploading && (
         <div className="text-center py-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-sm text-gray-500 mt-2">Cargando imagen...</p>
+          <p className="text-sm text-gray-500 mt-2">Subiendo imagen...</p>
         </div>
       )}
     </div>

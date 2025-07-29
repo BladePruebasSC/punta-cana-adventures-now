@@ -9,9 +9,7 @@
       - `created_at` (timestamp)
       - `updated_at` (timestamp)
   2. Security
-    - Enable RLS on `site_settings` table
-    - Add policy for public read access
-    - Add policy for authenticated admin access
+    - Disable RLS on `site_settings` table for admin operations
   3. Initial Data
     - Insert default background image setting
 */
@@ -24,21 +22,8 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
-
--- Allow public read access to site settings
-CREATE POLICY "Allow public read access to site_settings"
-  ON site_settings
-  FOR SELECT
-  TO public
-  USING (true);
-
--- Allow all operations for authenticated users (admin access)
-CREATE POLICY "Allow admin access to site_settings"
-  ON site_settings
-  FOR ALL
-  TO authenticated
-  USING (true);
+-- Disable RLS to allow public access for admin operations
+ALTER TABLE site_settings DISABLE ROW LEVEL SECURITY;
 
 -- Insert default background image
 INSERT INTO site_settings (setting_key, setting_value) 
