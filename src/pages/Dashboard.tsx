@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload, Settings, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +55,14 @@ interface Post {
   created_at: string;
 }
 
+interface SiteSetting {
+  id: string;
+  setting_key: string;
+  setting_value: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,10 +71,12 @@ const Dashboard = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSetting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings'>('reservations');
   const [showAddPost, setShowAddPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [backgroundImage, setBackgroundImage] = useState('');
   const { toast } = useToast();
 
   // Changed password to jontours2025
@@ -141,6 +152,21 @@ const Dashboard = () => {
       if (postsError) throw postsError;
       setPosts(postsData || []);
 
+      // Fetch site settings
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('site_settings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (settingsError) throw settingsError;
+      setSiteSettings(settingsData || []);
+      
+      // Set current background image
+      const bgSetting = settingsData?.find(s => s.setting_key === 'hero_background_image');
+      if (bgSetting) {
+        setBackgroundImage(bgSetting.setting_value);
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -151,6 +177,60 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateSiteSetting = async (key: string, value: string) => {
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          setting_key: key,
+          setting_value: value,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'setting_key'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Configuración actualizada",
+        description: "Los cambios se han guardado exitosamente",
+      });
+
+      // Update local state
+      setSiteSettings(prev => {
+        const existing = prev.find(s => s.setting_key === key);
+        if (existing) {
+          return prev.map(s => 
+            s.setting_key === key 
+              ? { ...s, setting_value: value, updated_at: new Date().toISOString() }
+              : s
+          );
+        } else {
+          return [...prev, {
+            id: crypto.randomUUID(),
+            setting_key: key,
+            setting_value: value,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }];
+        }
+      });
+
+    } catch (error) {
+      console.error('Error updating site setting:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBackgroundImageChange = (imageUrl: string) => {
+    setBackgroundImage(imageUrl);
+    updateSiteSetting('hero_background_image', imageUrl);
   };
 
   const updateReservationStatus = async (id: string, status: string) => {
@@ -533,6 +613,14 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                 className="text-sm"
               >
                 Tours ({posts.length})
+              </Button>
+              <Button
+                variant={activeTab === 'settings' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('settings')}
+                className="text-sm"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Configuración
               </Button>
               <Button
                 variant="outline"
@@ -1113,6 +1201,86 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                 </Card>
               ))}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Configuración del Sitio
+                </CardTitle>
+                <CardDescription>
+                  Personaliza la apariencia y configuración de tu sitio web
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5" />
+                  Imagen de Fondo del Hero
+                </CardTitle>
+                <CardDescription>
+                  Cambia la imagen de fondo de la sección principal de tu sitio web
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImageUpload
+                  currentImageUrl={backgroundImage}
+                  onImageChange={handleBackgroundImageChange}
+                  label="Imagen de Fondo"
+                  maxSizeMB={10}
+                />
+                
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Consejos para la imagen de fondo:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Usa imágenes de alta resolución (mínimo 1920x1080px)</li>
+                    <li>• Formatos recomendados: JPG, PNG, WebP</li>
+                    <li>• Evita imágenes muy oscuras o con mucho detalle</li>
+                    <li>• El texto blanco debe ser legible sobre la imagen</li>
+                  </ul>
+                </div>
+
+                {backgroundImage && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium">Vista previa en el sitio:</Label>
+                    <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                      <img
+                        src={backgroundImage}
+                        alt="Vista previa del fondo"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-emerald-900/50 flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <h3 className="text-lg font-bold">Descubre Todo Punta Cana</h3>
+                          <p className="text-sm opacity-90">Vista previa del hero</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuraciones Adicionales</CardTitle>
+                <CardDescription>
+                  Próximamente: más opciones de personalización
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Más opciones de configuración estarán disponibles pronto</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

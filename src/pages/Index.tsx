@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Users, Filter, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+
+interface SiteSetting {
+  id: string;
+  setting_key: string;
+  setting_value: string;
+}
 
 // Translation system
 const translations = {
@@ -197,6 +202,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
     { id: 'aventura', name: t.adventure, count: 0 },
@@ -207,7 +213,26 @@ const Index = () => {
 
   useEffect(() => {
     fetchTours();
+    fetchSiteSettings();
   }, []);
+
+  const fetchSiteSettings = async () => {
+    try {
+      const { data: settingsData, error } = await supabase
+        .from('site_settings')
+        .select('*');
+
+      if (error) throw error;
+
+      const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
+      if (bgSetting) {
+        setHeroBackgroundImage(bgSetting.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching site settings:', error);
+      // Keep default background image if there's an error
+    }
+  };
 
   const fetchTours = async () => {
     try {
@@ -407,7 +432,7 @@ const Index = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80)'
+            backgroundImage: `url(${heroBackgroundImage})`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-emerald-900/50"></div>
@@ -440,20 +465,20 @@ const Index = () => {
             </Button>
           </form>
 
-                      <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <Star className="w-4 h-4 text-yellow-400" />
-                <span>{t.reviews}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <Users className="w-4 h-4" />
-                <span>{t.smallGroups}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                <MapPin className="w-4 h-4" />
-                <span>{t.localGuides}</span>
-              </div>
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+              <Star className="w-4 h-4 text-yellow-400" />
+              <span>{t.reviews}</span>
             </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+              <Users className="w-4 h-4" />
+              <span>{t.smallGroups}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+              <MapPin className="w-4 h-4" />
+              <span>{t.localGuides}</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -585,11 +610,11 @@ const Index = () => {
                     </div>
                     
                     {displayImages.length > 1 && (
-                                              <div className="absolute bottom-4 right-4">
-                          <Badge variant="secondary" className="text-xs">
-                            📸 {displayImages.length} {t.photos}
-                          </Badge>
-                        </div>
+                      <div className="absolute bottom-4 right-4">
+                        <Badge variant="secondary" className="text-xs">
+                          📸 {displayImages.length} {t.photos}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   
@@ -638,13 +663,13 @@ const Index = () => {
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-16 px-4">
-                  <div className="max-w-4xl mx-auto text-center text-white">
-            <h3 className="text-4xl font-bold mb-4">
-              {t.readyForAdventure}
-            </h3>
-            <p className="text-xl mb-8 opacity-90">
-              {t.contactExperts}
-            </p>
+        <div className="max-w-4xl mx-auto text-center text-white">
+          <h3 className="text-4xl font-bold mb-4">
+            {t.readyForAdventure}
+          </h3>
+          <p className="text-xl mb-8 opacity-90">
+            {t.contactExperts}
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
@@ -681,40 +706,40 @@ const Index = () => {
             </p>
           </div>
           
-                      <div>
-              <h4 className="font-semibold mb-4">
-                {t.popularTours}
-              </h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>{t.saonaIsland}</li>
-                <li>{t.safariAdventure}</li>
-                <li>{t.blueHole}</li>
-                <li>{t.santoDomingo}</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">
-                {t.services}
-              </h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>{t.privateTours}</li>
-                <li>{t.corporateGroups}</li>
-                <li>{t.transportation}</li>
-                <li>{t.certifiedGuides}</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">
-                {t.contact}
-              </h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>📱 +1 (809) 840-8257</li>
-                <li>✉️ info@jontours.com</li>
-                <li>🕒 {t.hours}</li>
-              </ul>
-            </div>
+          <div>
+            <h4 className="font-semibold mb-4">
+              {t.popularTours}
+            </h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>{t.saonaIsland}</li>
+              <li>{t.safariAdventure}</li>
+              <li>{t.blueHole}</li>
+              <li>{t.santoDomingo}</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold mb-4">
+              {t.services}
+            </h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>{t.privateTours}</li>
+              <li>{t.corporateGroups}</li>
+              <li>{t.transportation}</li>
+              <li>{t.certifiedGuides}</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold mb-4">
+              {t.contact}
+            </h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>📱 +1 (809) 840-8257</li>
+              <li>✉️ info@jontours.com</li>
+              <li>🕒 {t.hours}</li>
+            </ul>
+          </div>
         </div>
         
         <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
