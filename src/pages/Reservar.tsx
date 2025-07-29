@@ -118,9 +118,45 @@ const Reservar = () => {
         description: "Tu reserva ha sido enviada. Te contactaremos pronto para confirmar los detalles.",
       });
 
+      // Crear mensaje para WhatsApp con todos los datos
+      const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tours and Adventure* 🌴
+
+📋 *Detalles de la Reserva:*
+• Tour: ${tour?.title}
+• Nombre: ${formData.name}
+• Email: ${formData.email}
+• Teléfono: ${formData.phone}
+• Fecha: ${formData.date}
+• Huéspedes: ${formData.guests}
+• Precio total: $${tour ? (tour.price * parseInt(formData.guests)).toFixed(2) : '0.00'}
+
+${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.special_requests}\n\n` : ''}¡Esperamos confirmar esta reserva pronto! 🎉`;
+
+      const phoneNumber = '18098408257';
+      const encodedMessage = encodeURIComponent(whatsappMessage);
+      
+      // iOS-friendly WhatsApp redirect
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        if (isIOS) {
+          // For iOS, use whatsapp:// protocol first
+          window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+          
+          // Fallback to web version after a short delay if the app doesn't open
+          setTimeout(() => {
+            const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+            window.open(fallbackUrl, '_blank');
+          }, 1500);
+        } else {
+          window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+        }
+        
+        // Navigate back after WhatsApp redirect
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }, 1000);
 
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -170,7 +206,6 @@ const Reservar = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
-      {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-4">
@@ -196,7 +231,6 @@ const Reservar = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Tour Information */}
           <div className="space-y-6">
             <Card>
               <div className="relative">
@@ -278,7 +312,6 @@ const Reservar = () => {
             </Card>
           </div>
 
-          {/* Reservation Form */}
           <div>
             <Card>
               <CardHeader>

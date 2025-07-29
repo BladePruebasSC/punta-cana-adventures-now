@@ -1,21 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Plus, Edit, Trash2, Eye, Calendar, Users, MapPin, Image, X } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-const ADMIN_PASSWORD = "admin123";
+interface Reservation {
+  id: string;
+  tour_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  date: string;
+  guests: number;
+  special_requests: string | null;
+  status: string;
+  created_at: string;
+  posts: {
+    title: string;
+    price: number;
+  } | null;
+}
 
-interface Tour {
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  status: string | null;
+  created_at: string;
+}
+
+interface Post {
   id: string;
   title: string;
   description: string;
@@ -29,355 +54,103 @@ interface Tour {
   created_at: string;
 }
 
-interface TourImage {
-  id: string;
-  tour_id: string;
-  image_url: string;
-  alt_text: string;
-  is_primary: boolean;
-  order_index: number;
-}
-
-interface Reservation {
-  id: string;
-  tour_id: string;
-  name: string;
-  email: string;
-  phone: string;
-  date: string;
-  guests: number;
-  special_requests: string;
-  status: string;
-  created_at: string;
-  posts?: { title: string };
-}
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('tours');
-  const [tours, setTours] = useState<Tour[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [editingTour, setEditingTour] = useState<Tour | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isImagesDialogOpen, setIsImagesDialogOpen] = useState(false);
-  const [selectedTourImages, setSelectedTourImages] = useState<TourImage[]>([]);
-  const [selectedTourId, setSelectedTourId] = useState<string>('');
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [newImageAlt, setNewImageAlt] = useState('');
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts'>('reservations');
+  const [showAddPost, setShowAddPost] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const { toast } = useToast();
 
-  const [tourForm, setTourForm] = useState({
+  // Changed password to jontours2025
+  const ADMIN_PASSWORD = 'jontours2025';
+
+  const [newPost, setNewPost] = useState({
     title: '',
     description: '',
     image_url: '',
-    price: '',
+    price: 0,
     duration: '',
-    rating: '4.5',
+    rating: 5,
     category: 'aventura',
     group_size: '',
-    highlights: ''
+    highlights: ['']
   });
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchTours();
-      fetchReservations();
+      fetchData();
     }
   }, [isAuthenticated]);
 
-  const handleLogin = () => {
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       toast({
-        title: "Acceso concedido",
-        description: "Bienvenido al dashboard de administración",
+        title: "Bienvenido",
+        description: "Acceso autorizado al dashboard",
       });
     } else {
       toast({
-        title: "Error de autenticación",
+        title: "Error",
         description: "Contraseña incorrecta",
         variant: "destructive",
       });
     }
   };
 
-  const fetchTours = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch reservations with tour details
+      const { data: reservationsData, error: reservationsError } = await supabase
+        .from('reservations')
+        .select(`
+          *,
+          posts (
+            title,
+            price
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (reservationsError) throw reservationsError;
+      setReservations(reservationsData || []);
+
+      // Fetch contact messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('contact_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (messagesError) throw messagesError;
+      setContactMessages(messagesData || []);
+
+      // Fetch posts
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setTours(data || []);
+      if (postsError) throw postsError;
+      setPosts(postsData || []);
+
     } catch (error) {
-      console.error('Error fetching tours:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar los tours",
+        description: "No se pudieron cargar los datos",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const fetchReservations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('reservations')
-        .select(`
-          *,
-          posts (title)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setReservations(data || []);
-    } catch (error) {
-      console.error('Error fetching reservations:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las reservas",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchTourImages = async (tourId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('tour_images')
-        .select('*')
-        .eq('tour_id', tourId)
-        .order('order_index', { ascending: true });
-
-      if (error) throw error;
-      setSelectedTourImages(data || []);
-    } catch (error) {
-      console.error('Error fetching tour images:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las imágenes",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleManageImages = async (tour: Tour) => {
-    setSelectedTourId(tour.id);
-    await fetchTourImages(tour.id);
-    setIsImagesDialogOpen(true);
-  };
-
-  const handleAddImage = async () => {
-    if (!newImageUrl.trim()) {
-      toast({
-        title: "Error",
-        description: "La URL de la imagen es requerida",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const maxOrderIndex = Math.max(...selectedTourImages.map(img => img.order_index), -1);
-      
-      const { error } = await supabase
-        .from('tour_images')
-        .insert([
-          {
-            tour_id: selectedTourId,
-            image_url: newImageUrl,
-            alt_text: newImageAlt || 'Imagen del tour',
-            is_primary: false,
-            order_index: maxOrderIndex + 1
-          }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Imagen agregada correctamente",
-      });
-
-      setNewImageUrl('');
-      setNewImageAlt('');
-      await fetchTourImages(selectedTourId);
-    } catch (error) {
-      console.error('Error adding image:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo agregar la imagen",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteImage = async (imageId: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta imagen?')) {
-      try {
-        const { error } = await supabase
-          .from('tour_images')
-          .delete()
-          .eq('id', imageId);
-
-        if (error) throw error;
-
-        toast({
-          title: "Éxito",
-          description: "Imagen eliminada correctamente",
-        });
-
-        await fetchTourImages(selectedTourId);
-      } catch (error) {
-        console.error('Error deleting image:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo eliminar la imagen",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleSetPrimaryImage = async (imageId: string) => {
-    try {
-      // First, set all images as non-primary
-      await supabase
-        .from('tour_images')
-        .update({ is_primary: false })
-        .eq('tour_id', selectedTourId);
-
-      // Then set the selected image as primary
-      const { error } = await supabase
-        .from('tour_images')
-        .update({ is_primary: true })
-        .eq('id', imageId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Imagen principal actualizada",
-      });
-
-      await fetchTourImages(selectedTourId);
-    } catch (error) {
-      console.error('Error setting primary image:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la imagen principal",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSaveTour = async () => {
-    try {
-      const highlights = tourForm.highlights.split(',').map(h => h.trim()).filter(h => h);
-      
-      const tourData = {
-        title: tourForm.title,
-        description: tourForm.description,
-        image_url: tourForm.image_url,
-        price: parseFloat(tourForm.price),
-        duration: tourForm.duration,
-        rating: parseFloat(tourForm.rating),
-        category: tourForm.category,
-        group_size: tourForm.group_size,
-        highlights,
-      };
-
-      let error;
-      if (editingTour) {
-        ({ error } = await supabase
-          .from('posts')
-          .update(tourData)
-          .eq('id', editingTour.id));
-      } else {
-        ({ error } = await supabase
-          .from('posts')
-          .insert([tourData]));
-      }
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: editingTour ? "Tour actualizado correctamente" : "Tour creado correctamente",
-      });
-
-      setIsDialogOpen(false);
-      resetForm();
-      fetchTours();
-    } catch (error) {
-      console.error('Error saving tour:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar el tour",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteTour = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este tour?')) {
-      try {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Éxito",
-          description: "Tour eliminado correctamente",
-        });
-        
-        fetchTours();
-      } catch (error) {
-        console.error('Error deleting tour:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo eliminar el tour",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleEditTour = (tour: Tour) => {
-    setEditingTour(tour);
-    setTourForm({
-      title: tour.title,
-      description: tour.description,
-      image_url: tour.image_url,
-      price: tour.price.toString(),
-      duration: tour.duration,
-      rating: tour.rating.toString(),
-      category: tour.category,
-      group_size: tour.group_size,
-      highlights: tour.highlights.join(', ')
-    });
-    setIsDialogOpen(true);
-  };
-
-  const resetForm = () => {
-    setEditingTour(null);
-    setTourForm({
-      title: '',
-      description: '',
-      image_url: '',
-      price: '',
-      duration: '',
-      rating: '4.5',
-      category: 'aventura',
-      group_size: '',
-      highlights: ''
-    });
   };
 
   const updateReservationStatus = async (id: string, status: string) => {
@@ -389,77 +162,394 @@ const Dashboard = () => {
 
       if (error) throw error;
 
+      // Update local state
+      setReservations(prev => prev.map(reservation => 
+        reservation.id === id ? { ...reservation, status } : reservation
+      ));
+
       toast({
-        title: "Éxito",
-        description: "Estado de reserva actualizado",
+        title: "Estado actualizado",
+        description: `Reserva ${status === 'confirmed' ? 'confirmada' : 'rechazada'} exitosamente`,
       });
-      
-      fetchReservations();
+
+      // If confirming, send WhatsApp message to customer
+      if (status === 'confirmed') {
+        const reservation = reservations.find(r => r.id === id);
+        if (reservation) {
+          sendConfirmationWhatsApp(reservation);
+        }
+      }
+
     } catch (error) {
       console.error('Error updating reservation:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar la reserva",
+        description: "No se pudo actualizar el estado de la reserva",
         variant: "destructive",
       });
     }
   };
 
+  const sendConfirmationWhatsApp = (reservation: Reservation) => {
+    const message = `🎉 *RESERVA CONFIRMADA - Jon Tours and Adventure* 🎉
+
+¡Hola ${reservation.name}! ✨
+
+Tu reserva ha sido confirmada exitosamente:
+
+📋 *Detalles de tu Tour:*
+• Tour: ${reservation.posts?.title || 'Tour no disponible'}
+• Fecha: ${reservation.date}
+• Huéspedes: ${reservation.guests}
+• Total: $${reservation.posts ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}
+
+📍 *Próximos pasos:*
+• Te contactaremos 24h antes con el punto de encuentro
+• Recuerda traer documento de identidad
+• Usa ropa cómoda y protector solar
+
+${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_requests}\n\n` : ''}¡Estamos emocionados de tenerte en esta aventura! 🌴
+
+*Jon Tours and Adventure*
++1 (809) 840-8257`;
+
+    const phoneNumber = reservation.phone.replace(/[^\d]/g, '');
+    const encodedMessage = encodeURIComponent(message);
+    
+    // iOS-friendly WhatsApp redirect
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // For iOS, use whatsapp:// protocol first
+      window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+      
+      // Fallback to web version after a short delay if the app doesn't open
+      setTimeout(() => {
+        const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        window.open(fallbackUrl, '_blank');
+      }, 1500);
+    } else {
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+    }
+  };
+
+  const updateMessageStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setContactMessages(prev => prev.map(message => 
+        message.id === id ? { ...message, status } : message
+      ));
+
+      toast({
+        title: "Estado actualizado",
+        description: `Mensaje marcado como ${status === 'read' ? 'leído' : 'pendiente'}`,
+      });
+
+    } catch (error) {
+      console.error('Error updating message:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado del mensaje",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddPost = async () => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .insert([{
+          title: newPost.title,
+          description: newPost.description,
+          image_url: newPost.image_url,
+          price: newPost.price,
+          duration: newPost.duration,
+          rating: newPost.rating,
+          category: newPost.category,
+          group_size: newPost.group_size,
+          highlights: newPost.highlights.filter(h => h.trim() !== '')
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour agregado",
+        description: "El tour se ha agregado exitosamente",
+      });
+
+      setShowAddPost(false);
+      setNewPost({
+        title: '',
+        description: '',
+        image_url: '',
+        price: 0,
+        duration: '',
+        rating: 5,
+        category: 'aventura',
+        group_size: '',
+        highlights: ['']
+      });
+      fetchData();
+
+    } catch (error) {
+      console.error('Error adding post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({
+          title: editingPost.title,
+          description: editingPost.description,
+          image_url: editingPost.image_url,
+          price: editingPost.price,
+          duration: editingPost.duration,
+          rating: editingPost.rating,
+          category: editingPost.category,
+          group_size: editingPost.group_size,
+          highlights: editingPost.highlights.filter(h => h.trim() !== '')
+        })
+        .eq('id', editingPost.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour actualizado",
+        description: "El tour se ha actualizado exitosamente",
+      });
+
+      setEditingPost(null);
+      fetchData();
+
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tour eliminado",
+        description: "El tour se ha eliminado exitosamente",
+      });
+
+      fetchData();
+
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el tour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addHighlight = (isEditing = false) => {
+    if (isEditing && editingPost) {
+      setEditingPost({
+        ...editingPost,
+        highlights: [...editingPost.highlights, '']
+      });
+    } else {
+      setNewPost({
+        ...newPost,
+        highlights: [...newPost.highlights, '']
+      });
+    }
+  };
+
+  const updateHighlight = (index: number, value: string, isEditing = false) => {
+    if (isEditing && editingPost) {
+      const newHighlights = [...editingPost.highlights];
+      newHighlights[index] = value;
+      setEditingPost({
+        ...editingPost,
+        highlights: newHighlights
+      });
+    } else {
+      const newHighlights = [...newPost.highlights];
+      newHighlights[index] = value;
+      setNewPost({
+        ...newPost,
+        highlights: newHighlights
+      });
+    }
+  };
+
+  const removeHighlight = (index: number, isEditing = false) => {
+    if (isEditing && editingPost) {
+      setEditingPost({
+        ...editingPost,
+        highlights: editingPost.highlights.filter((_, i) => i !== index)
+      });
+    } else {
+      setNewPost({
+        ...newPost,
+        highlights: newPost.highlights.filter((_, i) => i !== index)
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge className="bg-green-500">Confirmada</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rechazada</Badge>;
+      default:
+        return <Badge variant="secondary">Pendiente</Badge>;
+    }
+  };
+
+  const getMessageStatusBadge = (status: string | null) => {
+    switch (status) {
+      case 'read':
+        return <Badge className="bg-green-500">Leído</Badge>;
+      default:
+        return <Badge variant="secondary">Nuevo</Badge>;
+    }
+  };
+
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-2xl">Dashboard de Administración</CardTitle>
-            <CardDescription>Ingresa la contraseña para acceder</CardDescription>
+            <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Jon Tours Dashboard
+            </CardTitle>
+            <CardDescription>
+              Ingresa la contraseña para acceder
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                placeholder="Ingresa la contraseña"
-              />
-            </div>
-            <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-blue-600 to-emerald-600">
-              Acceder
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')} 
-              className="w-full"
-            >
-              Volver al Inicio
-            </Button>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+              >
+                Ingresar
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard - Jon Tours</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => navigate('/')}>
-                Ver Sitio Web
+      <header className="bg-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Dashboard - Jon Tours
+            </h1>
+            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+              <Button
+                variant={activeTab === 'reservations' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('reservations')}
+                className="text-sm"
+              >
+                Reservas ({reservations.length})
               </Button>
-              <Button variant="outline" onClick={() => setIsAuthenticated(false)}>
+              <Button
+                variant={activeTab === 'messages' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('messages')}
+                className="text-sm"
+              >
+                Mensajes ({contactMessages.length})
+              </Button>
+              <Button
+                variant={activeTab === 'posts' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('posts')}
+                className="text-sm"
+              >
+                Tours ({posts.length})
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/')}
+                className="text-sm flex items-center gap-2"
+              >
+                <Home className="w-4 h-4" />
+                Inicio
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAuthenticated(false);
+                  setPassword('');
+                }}
+                className="text-sm"
+              >
                 Cerrar Sesión
               </Button>
             </div>
@@ -468,421 +558,562 @@ const Dashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Tours</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tours.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reservas Totales</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{reservations.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reservas Pendientes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {reservations.filter(r => r.status === 'pending').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {activeTab === 'reservations' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Reservas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{reservations.length}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Confirmadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                    {reservations.filter(r => r.status === 'confirmed').length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Pendientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                    {reservations.filter(r => r.status === 'pending').length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Rechazadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {reservations.filter(r => r.status === 'rejected').length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-white rounded-lg p-1 mb-6">
-          <Button
-            variant={activeTab === 'tours' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('tours')}
-            className="flex-1"
-          >
-            Gestionar Tours
-          </Button>
-          <Button
-            variant={activeTab === 'reservations' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('reservations')}
-            className="flex-1"
-          >
-            Ver Reservas
-          </Button>
-        </div>
+            <div className="space-y-4 sm:space-y-6">
+              {reservations.map((reservation) => (
+                <Card key={reservation.id} className="overflow-hidden">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg sm:text-xl">
+                          {reservation.posts?.title || 'Tour no disponible'}
+                        </CardTitle>
+                        <CardDescription className="text-sm">
+                          Reserva de {reservation.name} • {new Date(reservation.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 sm:mt-0">
+                        {getStatusBadge(reservation.status)}
+                        <div className="text-lg sm:text-xl font-bold text-green-600">
+                          ${reservation.posts ? (reservation.posts.price * reservation.guests).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <span>{reservation.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-green-600" />
+                        <span>{reservation.guests} huéspedes</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-purple-600" />
+                        <span className="truncate">{reservation.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-orange-600" />
+                        <span>{reservation.phone}</span>
+                      </div>
+                    </div>
+                    
+                    {reservation.special_requests && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="w-4 h-4 text-gray-600 mt-0.5" />
+                          <div>
+                            <div className="font-medium text-sm text-gray-700">Solicitudes especiales:</div>
+                            <div className="text-sm text-gray-600 mt-1">{reservation.special_requests}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {reservation.status === 'pending' && (
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
+                          className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          Confirmar Reserva
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => updateReservationStatus(reservation.id, 'rejected')}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Rechazar
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Tours Tab */}
-        {activeTab === 'tours' && (
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Gestión de Tours</CardTitle>
-                  <CardDescription>Administra todos los tours disponibles</CardDescription>
-                </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetForm} className="bg-gradient-to-r from-blue-600 to-emerald-600">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nuevo Tour
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingTour ? 'Editar Tour' : 'Crear Nuevo Tour'}
-                      </DialogTitle>
-                      <DialogDescription>
-                        Completa la información del tour
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="title">Título</Label>
-                          <Input
-                            id="title"
-                            value={tourForm.title}
-                            onChange={(e) => setTourForm({...tourForm, title: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="price">Precio (USD)</Label>
-                          <Input
-                            id="price"
-                            type="number"
-                            value={tourForm.price}
-                            onChange={(e) => setTourForm({...tourForm, price: e.target.value})}
-                          />
-                        </div>
+        {activeTab === 'messages' && (
+          <div className="space-y-4 sm:space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mensajes de Contacto</CardTitle>
+                <CardDescription>
+                  {contactMessages.length} mensajes recibidos
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <div className="space-y-4">
+              {contactMessages.map((message) => (
+                <Card key={message.id}>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{message.subject}</CardTitle>
+                        <CardDescription>
+                          De: {message.name} ({message.email}) • {new Date(message.created_at).toLocaleDateString()}
+                        </CardDescription>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea
-                          id="description"
-                          value={tourForm.description}
-                          onChange={(e) => setTourForm({...tourForm, description: e.target.value})}
-                          rows={3}
-                        />
+                      {getMessageStatusBadge(message.status)}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    {message.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-orange-600" />
+                        <span>{message.phone}</span>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="image_url">URL de Imagen</Label>
+                    )}
+                    
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-700">{message.message}</p>
+                    </div>
+                    
+                    {message.status !== 'read' && (
+                      <Button
+                        onClick={() => updateMessageStatus(message.id, 'read')}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Marcar como leído
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'posts' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Gestión de Tours</h2>
+              <Dialog open={showAddPost} onOpenChange={setShowAddPost}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 mt-4 sm:mt-0">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Tour
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Agregar Nuevo Tour</DialogTitle>
+                    <DialogDescription>
+                      Completa la información del nuevo tour
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="title">Título</Label>
                         <Input
-                          id="image_url"
-                          value={tourForm.image_url}
-                          onChange={(e) => setTourForm({...tourForm, image_url: e.target.value})}
+                          id="title"
+                          value={newPost.title}
+                          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                          placeholder="Nombre del tour"
                         />
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="duration">Duración</Label>
-                          <Input
-                            id="duration"
-                            value={tourForm.duration}
-                            onChange={(e) => setTourForm({...tourForm, duration: e.target.value})}
-                            placeholder="ej: 8 horas"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="rating">Rating</Label>
-                          <Input
-                            id="rating"
-                            type="number"
-                            step="0.1"
-                            min="1"
-                            max="5"
-                            value={tourForm.rating}
-                            onChange={(e) => setTourForm({...tourForm, rating: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="category">Categoría</Label>
-                          <select
-                            id="category"
-                            value={tourForm.category}
-                            onChange={(e) => setTourForm({...tourForm, category: e.target.value})}
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                          >
-                            <option value="aventura">Aventura</option>
-                            <option value="playa">Playa & Mar</option>
-                            <option value="cultura">Cultura</option>
-                            <option value="naturaleza">Naturaleza</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="group_size">Tamaño del Grupo</Label>
+                      <div>
+                        <Label htmlFor="price">Precio ($)</Label>
                         <Input
-                          id="group_size"
-                          value={tourForm.group_size}
-                          onChange={(e) => setTourForm({...tourForm, group_size: e.target.value})}
-                          placeholder="ej: 2-15 personas"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="highlights">Destacados (separados por coma)</Label>
-                        <Textarea
-                          id="highlights"
-                          value={tourForm.highlights}
-                          onChange={(e) => setTourForm({...tourForm, highlights: e.target.value})}
-                          placeholder="ej: Almuerzo incluido, Snorkeling, Transporte"
+                          id="price"
+                          type="number"
+                          value={newPost.price}
+                          onChange={(e) => setNewPost({ ...newPost, price: Number(e.target.value) })}
+                          placeholder="0"
                         />
                       </div>
                     </div>
                     
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSaveTour} className="bg-gradient-to-r from-blue-600 to-emerald-600">
-                        {editingTour ? 'Actualizar' : 'Crear'} Tour
-                      </Button>
+                    <div>
+                      <Label htmlFor="description">Descripción</Label>
+                      <Textarea
+                        id="description"
+                        value={newPost.description}
+                        onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                        placeholder="Descripción del tour"
+                        rows={3}
+                      />
                     </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {tours.map((tour) => (
-                  <div key={tour.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <img 
-                      src={tour.image_url} 
-                      alt={tour.title}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{tour.title}</h3>
-                      <p className="text-gray-600 text-sm">{tour.description.substring(0, 100)}...</p>
-                      <div className="flex items-center space-x-4 mt-2">
-                        <Badge variant="outline">${tour.price}</Badge>
-                        <Badge variant="outline">{tour.duration}</Badge>
-                        <Badge variant="outline">{tour.category}</Badge>
+                    
+                    <div>
+                      <Label htmlFor="image_url">URL de la imagen</Label>
+                      <Input
+                        id="image_url"
+                        value={newPost.image_url}
+                        onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="duration">Duración</Label>
+                        <Input
+                          id="duration"
+                          value={newPost.duration}
+                          onChange={(e) => setNewPost({ ...newPost, duration: e.target.value })}
+                          placeholder="8 horas"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="group_size">Tamaño del grupo</Label>
+                        <Input
+                          id="group_size"
+                          value={newPost.group_size}
+                          onChange={(e) => setNewPost({ ...newPost, group_size: e.target.value })}
+                          placeholder="Hasta 8 personas"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="rating">Calificación</Label>
+                        <Input
+                          id="rating"
+                          type="number"
+                          min="1"
+                          max="5"
+                          step="0.1"
+                          value={newPost.rating}
+                          onChange={(e) => setNewPost({ ...newPost, rating: Number(e.target.value) })}
+                        />
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleManageImages(tour)}
+                    
+                    <div>
+                      <Label htmlFor="category">Categoría</Label>
+                      <Select
+                        value={newPost.category}
+                        onValueChange={(value) => setNewPost({ ...newPost, category: value })}
                       >
-                        <Image className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditTour(tour)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteTour(tour.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aventura">Aventura</SelectItem>
+                          <SelectItem value="playa">Playa & Mar</SelectItem>
+                          <SelectItem value="cultura">Cultura</SelectItem>
+                          <SelectItem value="naturaleza">Naturaleza</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Images Management Dialog */}
-        <Dialog open={isImagesDialogOpen} onOpenChange={setIsImagesDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Gestionar Imágenes del Tour</DialogTitle>
-              <DialogDescription>
-                Agrega, elimina y organiza las imágenes del tour
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6">
-              {/* Add New Image */}
-              <div className="border rounded-lg p-4 space-y-4">
-                <h4 className="font-semibold">Agregar Nueva Imagen</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-image-url">URL de la Imagen *</Label>
-                    <Input
-                      id="new-image-url"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-image-alt">Texto Alternativo</Label>
-                    <Input
-                      id="new-image-alt"
-                      value={newImageAlt}
-                      onChange={(e) => setNewImageAlt(e.target.value)}
-                      placeholder="Descripción de la imagen"
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleAddImage} className="bg-gradient-to-r from-blue-600 to-emerald-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar Imagen
-                </Button>
-              </div>
-
-              {/* Current Images */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">Imágenes Actuales ({selectedTourImages.length})</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {selectedTourImages.map((image) => (
-                    <div key={image.id} className="relative border rounded-lg overflow-hidden">
-                      <img 
-                        src={image.image_url} 
-                        alt={image.alt_text}
-                        className="w-full h-48 object-cover"
-                      />
-                      
-                      {image.is_primary && (
-                        <Badge className="absolute top-2 left-2 bg-green-600">
-                          Principal
-                        </Badge>
-                      )}
-                      
-                      <div className="p-3 space-y-2">
-                        <p className="text-sm text-gray-600 truncate">
-                          {image.alt_text || 'Sin descripción'}
-                        </p>
-                        
-                        <div className="flex space-x-1">
-                          {!image.is_primary && (
+                    
+                    <div>
+                      <Label>Highlights</Label>
+                      {newPost.highlights.map((highlight, index) => (
+                        <div key={index} className="flex gap-2 mt-2">
+                          <Input
+                            value={highlight}
+                            onChange={(e) => updateHighlight(index, e.target.value)}
+                            placeholder={`Highlight ${index + 1}`}
+                          />
+                          {newPost.highlights.length > 1 && (
                             <Button
-                              size="sm"
+                              type="button"
                               variant="outline"
-                              onClick={() => handleSetPrimaryImage(image.id)}
-                              className="text-xs"
+                              size="sm"
+                              onClick={() => removeHighlight(index)}
                             >
-                              Hacer Principal
+                              <X className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteImage(image.id)}
-                            className="text-xs"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
                         </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addHighlight()}
+                        className="mt-2"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Agregar Highlight
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddPost(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleAddPost}>
+                      Agregar Tour
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post) => (
+                <Card key={post.id} className="overflow-hidden">
+                  <div className="relative">
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600">
+                        ${post.price}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <CardHeader>
+                    <CardTitle className="text-lg">{post.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {post.description}
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{post.duration}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        <span>{post.group_size}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-                
-                {selectedTourImages.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No hay imágenes para este tour. Agrega la primera imagen arriba.
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setIsImagesDialogOpen(false)}>
-                Cerrar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Reservations Tab */}
-        {activeTab === 'reservations' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Reservas de Tours</CardTitle>
-              <CardDescription>Administra todas las reservas realizadas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tour</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Contacto</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Huéspedes</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reservations.map((reservation) => (
-                    <TableRow key={reservation.id}>
-                      <TableCell className="font-medium">
-                        {reservation.posts?.title || 'Tour eliminado'}
-                      </TableCell>
-                      <TableCell>{reservation.name}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{reservation.email}</div>
-                          <div className="text-muted-foreground">{reservation.phone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{new Date(reservation.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{reservation.guests}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            reservation.status === 'confirmed' ? 'default' :
-                            reservation.status === 'pending' ? 'secondary' :
-                            'destructive'
-                          }
-                        >
-                          {reservation.status === 'pending' ? 'Pendiente' :
-                           reservation.status === 'confirmed' ? 'Confirmada' :
-                           reservation.status === 'cancelled' ? 'Cancelada' : reservation.status}
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {post.highlights.slice(0, 2).map((highlight, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {highlight}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
+                      ))}
+                      {post.highlights.length > 2 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{post.highlights.length - 2} más
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
-                            disabled={reservation.status === 'confirmed'}
+                            className="flex-1"
+                            onClick={() => setEditingPost(post)}
                           >
-                            Confirmar
+                            <Edit className="w-4 h-4 mr-1" />
+                            Editar
                           </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => updateReservationStatus(reservation.id, 'cancelled')}
-                            disabled={reservation.status === 'cancelled'}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Editar Tour</DialogTitle>
+                          </DialogHeader>
+                          
+                          {editingPost && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor="edit-title">Título</Label>
+                                  <Input
+                                    id="edit-title"
+                                    value={editingPost.title}
+                                    onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-price">Precio ($)</Label>
+                                  <Input
+                                    id="edit-price"
+                                    type="number"
+                                    value={editingPost.price}
+                                    onChange={(e) => setEditingPost({ ...editingPost, price: Number(e.target.value) })}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-description">Descripción</Label>
+                                <Textarea
+                                  id="edit-description"
+                                  value={editingPost.description}
+                                  onChange={(e) => setEditingPost({ ...editingPost, description: e.target.value })}
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-image">URL de la imagen</Label>
+                                <Input
+                                  id="edit-image"
+                                  value={editingPost.image_url}
+                                  onChange={(e) => setEditingPost({ ...editingPost, image_url: e.target.value })}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <Label htmlFor="edit-duration">Duración</Label>
+                                  <Input
+                                    id="edit-duration"
+                                    value={editingPost.duration}
+                                    onChange={(e) => setEditingPost({ ...editingPost, duration: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-group">Tamaño del grupo</Label>
+                                  <Input
+                                    id="edit-group"
+                                    value={editingPost.group_size}
+                                    onChange={(e) => setEditingPost({ ...editingPost, group_size: e.target.value })}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-rating">Calificación</Label>
+                                  <Input
+                                    id="edit-rating"
+                                    type="number"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={editingPost.rating}
+                                    onChange={(e) => setEditingPost({ ...editingPost, rating: Number(e.target.value) })}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="edit-category">Categoría</Label>
+                                <Select
+                                  value={editingPost.category}
+                                  onValueChange={(value) => setEditingPost({ ...editingPost, category: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="aventura">Aventura</SelectItem>
+                                    <SelectItem value="playa">Playa & Mar</SelectItem>
+                                    <SelectItem value="cultura">Cultura</SelectItem>
+                                    <SelectItem value="naturaleza">Naturaleza</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label>Highlights</Label>
+                                {editingPost.highlights.map((highlight, index) => (
+                                  <div key={index} className="flex gap-2 mt-2">
+                                    <Input
+                                      value={highlight}
+                                      onChange={(e) => updateHighlight(index, e.target.value, true)}
+                                    />
+                                    {editingPost.highlights.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeHighlight(index, true)}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => addHighlight(true)}
+                                  className="mt-2"
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Agregar Highlight
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditingPost(null)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleUpdatePost}>
+                              Actualizar
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeletePost(post.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
