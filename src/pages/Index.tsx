@@ -435,7 +435,7 @@ const Index = () => {
             backgroundImage: `url(${heroBackgroundImage})`
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-emerald-900/50"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 to-emerald-900/20"></div>
         </div>
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
