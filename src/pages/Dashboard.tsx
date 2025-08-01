@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload, Settings, Image as ImageIcon } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload, Settings, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -402,6 +402,50 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
         description: "No se pudo actualizar el estado del mensaje",
         variant: "destructive",
       });
+    }
+  };
+
+  const openWhatsAppWithClient = (message: ContactMessage) => {
+    if (!message.phone) {
+      toast({
+        title: "Sin número de teléfono",
+        description: "Este cliente no proporcionó un número de teléfono",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const phoneNumber = message.phone.replace(/[^\d]/g, '');
+    const messageText = `Hola ${message.name}, 
+
+Gracias por contactarnos a través de nuestro sitio web. 
+
+Sobre tu consulta: "${message.subject}"
+
+${message.message}
+
+¿En qué podemos ayudarte? 
+
+Saludos,
+Jon Tours and Adventure
++1 (809) 840-8257`;
+
+    const encodedMessage = encodeURIComponent(messageText);
+    
+    // iOS-friendly WhatsApp redirect
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // For iOS, use whatsapp:// protocol first
+      window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+      
+      // Fallback to web version after a short delay if the app doesn't open
+      setTimeout(() => {
+        const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        window.open(fallbackUrl, '_blank');
+      }, 1500);
+    } else {
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
     }
   };
 
@@ -1037,15 +1081,28 @@ ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_r
                       <p className="text-sm text-gray-700">{message.message}</p>
                     </div>
                     
-                    {message.status !== 'read' && (
-                      <Button
-                        onClick={() => updateMessageStatus(message.id, 'read')}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        Marcar como leído
-                      </Button>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {message.phone && (
+                        <Button
+                          onClick={() => openWhatsAppWithClient(message)}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Responder por WhatsApp
+                        </Button>
+                      )}
+                      
+                      {message.status !== 'read' && (
+                        <Button
+                          onClick={() => updateMessageStatus(message.id, 'read')}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Marcar como leído
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
