@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import TourCard from '@/components/TourCard';
+import TourDetailModal from '@/components/TourDetailModal';
 
 interface SiteSetting {
   id: string;
@@ -202,6 +204,8 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -307,6 +311,21 @@ const Index = () => {
   };
 
   const handleTourClick = (tourId: string) => {
+    const tour = tours.find(t => t.id === tourId);
+    if (tour) {
+      setSelectedTour(tour);
+      setModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedTour(null);
+  };
+
+  const handleReserveFromModal = (tourId: string) => {
+    setModalOpen(false);
+    setSelectedTour(null);
     navigate(`/reservar/${tourId}`);
   };
 
@@ -560,103 +579,15 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTours.map((tour) => {
-              const images = tourImages[tour.id] || [];
-              const displayImages = images.length > 0 ? images : [{ id: 'default', image_url: tour.image_url, alt_text: tour.title, is_primary: true, order_index: 0, tour_id: tour.id }];
-              
-              return (
-                <Card 
-                  key={tour.id} 
-                  className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
-                  onClick={() => handleTourClick(tour.id)}
-                >
-                  <div className="relative overflow-hidden">
-                    {displayImages.length > 1 ? (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Carousel className="w-full">
-                          <CarouselContent>
-                            {displayImages.map((image, index) => (
-                              <CarouselItem key={image.id || index}>
-                                <img 
-                                  src={image.image_url} 
-                                  alt={image.alt_text || tour.title}
-                                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                                />
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-2" />
-                          <CarouselNext className="right-2" />
-                        </Carousel>
-                      </div>
-                    ) : (
-                      <img 
-                        src={displayImages[0].image_url} 
-                        alt={displayImages[0].alt_text || tour.title}
-                        className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    )}
-                    
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
-                        ${tour.price}
-                      </Badge>
-                    </div>
-                    <div className="absolute top-4 left-4">
-                      <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{tour.rating}</span>
-                      </div>
-                    </div>
-                    
-                    {displayImages.length > 1 && (
-                      <div className="absolute bottom-4 right-4">
-                        <Badge variant="secondary" className="text-xs">
-                          📸 {displayImages.length} {t.photos}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <CardHeader>
-                    <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
-                      {tour.title}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600">
-                      {tour.description}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{tour.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>{tour.group_size}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {tour.highlights.map((highlight, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {highlight}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
-                      onClick={(e) => handleReserveNow(tour.id, e)}
-                    >
-                      {t.reserveNow}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {filteredTours.map((tour) => (
+              <TourCard
+                key={tour.id}
+                tour={tour}
+                onTourClick={handleTourClick}
+                onReserveClick={handleReserveNow}
+                reserveText={t.reserveNow}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -746,6 +677,16 @@ const Index = () => {
           <p>{t.copyright}</p>
         </div>
       </footer>
+
+      {/* Tour Detail Modal */}
+      <TourDetailModal
+        tour={selectedTour}
+        tourImages={selectedTour ? (tourImages[selectedTour.id] || []) : []}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        onReserve={handleReserveFromModal}
+        reserveText={t.reserveNow}
+      />
     </div>
   );
 };
