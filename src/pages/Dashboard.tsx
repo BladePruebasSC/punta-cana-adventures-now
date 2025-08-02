@@ -626,11 +626,15 @@ Jon Tours and Adventure
 
   const handleAddTourImage = async (tourId: string, imageUrl: string, altText: string) => {
     try {
+      console.log('Starting to add tour image:', { tourId, imageUrl, altText });
+      
       // Obtener el siguiente order_index
       const tourImagesList = tourImages[tourId] || [];
       const nextOrderIndex = tourImagesList.length;
+      
+      console.log('Next order index:', nextOrderIndex);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tour_images')
         .insert([{
           tour_id: tourId,
@@ -638,24 +642,48 @@ Jon Tours and Adventure
           alt_text: altText,
           is_primary: false,
           order_index: nextOrderIndex
-        }]);
+        }])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Image added successfully:', data);
 
       toast({
         title: "Imagen agregada",
         description: "La imagen adicional se ha agregado exitosamente",
       });
 
-      fetchData();
+      // Refrescar los datos
+      await fetchData();
 
     } catch (error) {
       console.error('Error adding tour image:', error);
+      
+      let errorMessage = "No se pudo agregar la imagen";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key')) {
+          errorMessage = "Esta imagen ya existe para este tour";
+        } else if (error.message.includes('foreign key')) {
+          errorMessage = "El tour seleccionado no existe";
+        } else if (error.message.includes('network')) {
+          errorMessage = "Error de conexión. Verifica tu conexión a internet";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "No se pudo agregar la imagen",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      throw error; // Re-lanzar el error para que se maneje en handleAddNewImage
     }
   };
 
@@ -706,22 +734,77 @@ Jon Tours and Adventure
     }
   };
 
+  const testImageUrl = async (url: string) => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        throw new Error('La URL no apunta a una imagen válida');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error testing image URL:', error);
+      throw error;
+    }
+  };
+
   const handleAddNewImage = async () => {
-    if (!selectedTourForImages || !newImageData.imageUrl || !newImageData.altText) {
+    if (!selectedTourForImages) {
       toast({
         title: "Error",
-        description: "Por favor completa todos los campos",
+        description: "No se ha seleccionado ningún tour",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newImageData.imageUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona una imagen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newImageData.altText.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa un texto alternativo para la imagen",
         variant: "destructive",
       });
       return;
     }
 
     try {
+      console.log('Adding new image:', {
+        tourId: selectedTourForImages.id,
+        imageUrl: newImageData.imageUrl,
+        altText: newImageData.altText
+      });
+
       await handleAddTourImage(selectedTourForImages.id, newImageData.imageUrl, newImageData.altText);
+      
+      // Limpiar el formulario y cerrar el diálogo
       setNewImageData({ imageUrl: '', altText: '' });
       setShowAddImageDialog(false);
+      
+      toast({
+        title: "Éxito",
+        description: "La imagen se ha agregado correctamente al tour",
+      });
     } catch (error) {
       console.error('Error adding new image:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo agregar la imagen.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1603,16 +1686,14 @@ Jon Tours and Adventure
             </DialogHeader>
             
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="new-image">Imagen</Label>
-                <ImageUpload
-                  currentImageUrl={newImageData.imageUrl}
-                  onImageChange={(url) => setNewImageData({ ...newImageData, imageUrl: url })}
-                  label=""
-                  bucket="tour-images"
-                  maxSizeMB={10}
-                />
-              </div>
+              <ImageUpload
+                currentImageUrl=""
+                onImageChange={(imageUrl) => {
+                  setNewImageData({ ...newImageData, imageUrl });
+                }}
+                label="Seleccionar Imagen"
+                maxSizeMB={10}
+              />
               
               <div>
                 <Label htmlFor="new-alt-text">Texto Alternativo</Label>

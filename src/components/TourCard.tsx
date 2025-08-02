@@ -3,6 +3,8 @@ import { Clock, Users, Star, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { sendWhatsAppMessage } from '@/lib/utils';
+import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface Tour {
   id: string;
@@ -108,12 +110,32 @@ const TourCard: React.FC<TourCardProps> = ({
           </div>
         )}
         
-        <Button 
-          onClick={(e) => onReserveClick(tour.id, e)}
-          className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-medium"
-        >
-          {reserveText}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={(e) => onReserveClick(tour.id, e)}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-medium"
+          >
+            {reserveText}
+          </Button>
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              sendWhatsAppMessage({
+                title: tour.title,
+                price: tour.price,
+                duration: tour.duration,
+                description: tour.description,
+                highlights: tour.highlights
+              });
+            }}
+            variant="outline"
+            size="icon"
+            className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700"
+            title="Contáctame por WhatsApp"
+          >
+            <WhatsAppIcon className="w-4 h-4" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

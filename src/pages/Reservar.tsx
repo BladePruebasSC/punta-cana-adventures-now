@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { sendWhatsAppMessage } from '@/lib/utils';
+import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface Tour {
   id: string;
@@ -301,6 +303,23 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       </Badge>
                     ))}
                   </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    onClick={() => sendWhatsAppMessage({
+                      title: tour.title,
+                      price: tour.price,
+                      duration: tour.duration,
+                      description: tour.description,
+                      highlights: tour.highlights
+                    })}
+                    variant="outline"
+                    className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700"
+                  >
+                    <WhatsAppIcon className="w-4 h-4 mr-2" />
+                    Contáctame por WhatsApp
+                  </Button>
                 </div>
 
                 {tourImages.length > 1 && (

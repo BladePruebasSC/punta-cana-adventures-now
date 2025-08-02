@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import TourCard from '@/components/TourCard';
 import TourDetailModal from '@/components/TourDetailModal';
+import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface SiteSetting {
   id: string;
@@ -20,7 +21,7 @@ interface SiteSetting {
 const translations = {
   es: {
     heroTitle: "Descubre Todo Punta Cana",
-    heroSubtitle: "Tours únicos en Punta Cana • Experiencias auténticas • Memorias inolvidables",
+    heroSubtitle: "Transportación • Tours • Excursiones • Experiencias Inolvidables",
     searchPlaceholder: "Buscar tours, aventuras...",
     exploreButton: "Explorar Tours",
     reviews: "+1000 Reseñas 5★",
@@ -61,7 +62,7 @@ const translations = {
   },
   en: {
     heroTitle: "Discover All of Punta Cana",
-    heroSubtitle: "Unique tours in Punta Cana • Authentic experiences • Unforgettable memories",
+    heroSubtitle: "Transportation • Tours • Excursions • Unforgettable Experiences",
     searchPlaceholder: "Search tours, adventures...",
     exploreButton: "Explore Tours",
     reviews: "+1000 5★ Reviews",
@@ -102,7 +103,7 @@ const translations = {
   },
   fr: {
     heroTitle: "Découvrez Tout Punta Cana",
-    heroSubtitle: "Circuits uniques à Punta Cana • Expériences authentiques • Souvenirs inoubliables",
+    heroSubtitle: "Transport • Circuits • Excursions • Expériences Inoubliables",
     searchPlaceholder: "Rechercher des circuits, aventures...",
     exploreButton: "Explorer les Circuits",
     reviews: "+1000 Avis 5★",
@@ -344,7 +345,7 @@ const Index = () => {
 
   const handleWhatsAppClick = () => {
     const phoneNumber = '18098408257';
-    const message = encodeURIComponent('Hola, me interesa información sobre sus tours en Punta Cana');
+    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tours and Adventure* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
     
     // iOS-friendly WhatsApp redirect
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -458,12 +459,19 @@ const Index = () => {
         </div>
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-          <h2 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-            {t.heroTitle}
-          </h2>
-          <p className="text-xl md:text-2xl mb-8 animate-fade-in opacity-90">
-            {t.heroSubtitle}
-          </p>
+                                <h2 className="text-5xl md:text-7xl font-bold mb-3 animate-fade-in whitespace-nowrap hero-title-shadow">
+             {t.heroTitle}
+           </h2>
+           <p className="text-xl md:text-2xl mb-8 animate-fade-in opacity-90">
+             {t.heroSubtitle.split('•').map((part, index, array) => (
+               <span key={index}>
+                 {part.trim()}
+                                   {index < array.length - 1 && (
+                    <span className="text-yellow-300 mx-2 font-bold text-2xl drop-shadow-lg">•</span>
+                  )}
+               </span>
+             ))}
+           </p>
           
           <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <div className="relative w-full sm:w-96">
@@ -607,6 +615,7 @@ const Index = () => {
               className="bg-white text-blue-600 hover:bg-gray-100"
               onClick={handleWhatsAppClick}
             >
+              <WhatsAppIcon className="w-5 h-5 mr-2" />
               WhatsApp +1 (809) 840-8257
             </Button>
             <Button 

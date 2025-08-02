@@ -3,6 +3,8 @@ import { X, Clock, Users, Star, MapPin, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { sendWhatsAppMessage } from '@/lib/utils';
+import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface Tour {
   id: string;
@@ -46,15 +48,15 @@ const TourDetailModal: React.FC<TourDetailModalProps> = ({
   if (!isOpen || !tour) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+       {/* Backdrop */}
+       <div 
+         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+         onClick={onClose}
+       />
       
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden shadow-2xl">
+             {/* Modal */}
+       <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
@@ -167,8 +169,8 @@ const TourDetailModal: React.FC<TourDetailModalProps> = ({
         </div>
         
         {/* Footer */}
-        <div className="p-6 border-t bg-gray-50">
-          <div className="flex gap-3">
+        <div className="p-4 sm:p-6 border-t bg-gray-50">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               variant="outline" 
               onClick={onClose}
@@ -181,6 +183,20 @@ const TourDetailModal: React.FC<TourDetailModalProps> = ({
               className="flex-1 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
             >
               {reserveText}
+            </Button>
+            <Button 
+              onClick={() => sendWhatsAppMessage({
+                title: tour.title,
+                price: tour.price,
+                duration: tour.duration,
+                description: tour.description,
+                highlights: tour.highlights
+              })}
+              variant="outline"
+              className="flex-1 bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700"
+            >
+              <WhatsAppIcon className="w-4 h-4 mr-2" />
+              WhatsApp
             </Button>
           </div>
         </div>

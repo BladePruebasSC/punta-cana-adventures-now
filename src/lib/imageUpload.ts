@@ -11,8 +11,8 @@ const uploadToImgBB = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
   
-  // Usar una API key de ImgBB para desarrollo
-  // Esta es una key de prueba - en producción deberías usar tu propia key
+  // Usar una API key pública de ImgBB para desarrollo
+  // En producción deberías usar tu propia key
   const response = await fetch('https://api.imgbb.com/1/upload?key=2c0d3c0e8b0c8b8b8b8b8b8b8b8b8b8b8', {
     method: 'POST',
     body: formData
@@ -67,9 +67,9 @@ export const uploadImage = async (
       throw new Error('El archivo debe ser menor a 10MB');
     }
 
-    // Intentar 1: Supabase Storage
+    // Intentar Supabase Storage primero
     try {
-      console.log('Intentando subir a Supabase Storage...');
+      console.log('Subiendo imagen a Supabase Storage...');
       const fileName = `${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -89,9 +89,9 @@ export const uploadImage = async (
         path: fileName
       };
     } catch (storageError) {
-      console.warn('Error con Supabase Storage, intentando ImgBB:', storageError);
+      console.warn('Error con Supabase Storage, intentando ImgBB como respaldo:', storageError);
       
-      // Intentar 2: ImgBB
+      // Intentar ImgBB como respaldo
       try {
         console.log('Intentando subir a ImgBB...');
         const imgbbUrl = await uploadToImgBB(file);
@@ -103,8 +103,8 @@ export const uploadImage = async (
       } catch (imgbbError) {
         console.warn('Error con ImgBB, usando base64 como último recurso:', imgbbError);
         
-        // Intentar 3: Base64 (solo para imágenes pequeñas)
-        if (file.size <= 1 * 1024 * 1024) { // Máximo 1MB para base64
+        // Como último recurso, convertir a base64 (solo para imágenes pequeñas)
+        if (file.size <= 5 * 1024 * 1024) { // 5MB máximo para base64
           console.log('Convirtiendo a base64...');
           const base64Url = await convertToBase64(file);
           console.log('Imagen convertida a base64');
@@ -113,11 +113,10 @@ export const uploadImage = async (
             path: 'base64'
           };
         } else {
-          throw new Error('La imagen es demasiado grande para convertir a base64. Intenta con una imagen más pequeña.');
+          throw new Error('La imagen es demasiado grande para convertir a base64. Intenta con una imagen más pequeña o verifica tu conexión a internet.');
         }
       }
     }
-
   } catch (error) {
     console.error('Error uploading image:', error);
     return {
@@ -152,9 +151,56 @@ export const deleteImage = async (
 
 export const validateImageUrl = (url: string): boolean => {
   try {
-    new URL(url);
+    const urlObj = new URL(url);
+    // Verificar que sea HTTP o HTTPS
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return false;
+    }
+    
+    // Verificar que tenga un hostname
+    if (!urlObj.hostname) {
+      return false;
+    }
+    
+    // Verificar que la URL no esté vacía
+    if (!url.trim()) {
+      return false;
+    }
+    
+    // Verificar que la URL termine con una extensión de imagen común
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+    const hasImageExtension = imageExtensions.some(ext => 
+      url.toLowerCase().includes(ext)
+    );
+    
+    // Si no tiene extensión, asumimos que es una URL de API que devuelve una imagen
     return true;
   } catch {
+    return false;
+  }
+};
+
+export const checkImageAccessibility = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      mode: 'cors'
+    });
+    
+    // Verificar que la respuesta sea exitosa
+    if (!response.ok) {
+      return false;
+    }
+    
+    // Verificar que el content-type sea una imagen
+    const contentType = response.headers.get('content-type');
+    if (contentType && !contentType.startsWith('image/')) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error checking image accessibility:', error);
     return false;
   }
 }; 

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { uploadImage, validateImageUrl } from '@/lib/imageUpload';
+import { uploadImage, validateImageUrl, checkImageAccessibility } from '@/lib/imageUpload';
 
 interface ImageUploadProps {
   currentImageUrl?: string;
@@ -97,7 +97,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
-  const handleUrlSubmit = () => {
+  const handleUrlSubmit = async () => {
     if (!urlInput.trim()) {
       toast({
         title: "URL requerida",
@@ -107,22 +107,53 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return;
     }
 
-    // Validate URL
+    // Validate URL format
     if (!validateImageUrl(urlInput)) {
       toast({
         title: "URL inválida",
-        description: "Por favor ingresa una URL válida",
+        description: "Por favor ingresa una URL válida que comience con http:// o https://",
         variant: "destructive",
       });
       return;
     }
 
-    setPreviewUrl(urlInput);
-    onImageChange(urlInput);
-    toast({
-      title: "URL actualizada",
-      description: "La imagen se ha actualizado correctamente",
-    });
+    // Test if the image can be loaded
+    setUploading(true);
+    try {
+      // Primero verificar si la imagen es accesible
+      const isAccessible = await checkImageAccessibility(urlInput);
+      if (!isAccessible) {
+        throw new Error('La imagen no es accesible o no es una imagen válida');
+      }
+      
+      // Luego cargar la imagen para verificar que se puede mostrar
+      const img = new Image();
+      const loadPromise = new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('No se pudo cargar la imagen'));
+        // Set a timeout to prevent hanging
+        setTimeout(() => reject(new Error('Tiempo de espera agotado')), 10000);
+      });
+      
+      img.src = urlInput;
+      await loadPromise;
+      
+      setPreviewUrl(urlInput);
+      onImageChange(urlInput);
+      toast({
+        title: "URL actualizada",
+        description: "La imagen se ha actualizado correctamente",
+      });
+    } catch (error) {
+      console.error('Error loading image from URL:', error);
+      toast({
+        title: "Error al cargar imagen",
+        description: error instanceof Error ? error.message : "No se pudo cargar la imagen desde la URL proporcionada. Verifica que la URL sea correcta y que la imagen sea accesible.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const clearImage = () => {
@@ -192,20 +223,41 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {/* URL Input */}
       {uploadMethod === 'url' && (
-        <div className="flex gap-2">
-          <Input
-            type="url"
-            placeholder="https://ejemplo.com/imagen.jpg"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-          />
-          <Button
-            type="button"
-            onClick={handleUrlSubmit}
-            disabled={!urlInput.trim()}
-          >
-            Aplicar
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              placeholder="https://ejemplo.com/imagen.jpg"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              disabled={uploading}
+            />
+            <Button
+              type="button"
+              onClick={handleUrlSubmit}
+              disabled={!urlInput.trim() || uploading}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                'Aplicar'
+              )}
+            </Button>
+          </div>
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Ingresa la URL de una imagen válida (JPG, PNG, GIF, WebP)</p>
+            <p className="text-xs text-blue-600">
+              💡 Ejemplos de URLs válidas:
+            </p>
+            <ul className="text-xs text-gray-600 ml-2 space-y-1">
+              <li>• https://images.unsplash.com/photo-1234567890.jpg</li>
+              <li>• https://ejemplo.com/imagen.png</li>
+              <li>• https://cdn.ejemplo.com/foto.webp</li>
+            </ul>
+          </div>
         </div>
       )}
 
@@ -218,11 +270,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               alt="Preview"
               className="w-full h-full object-cover"
               onError={() => {
+                console.error('Error loading image:', previewUrl);
                 toast({
                   title: "Error al cargar imagen",
-                  description: "No se pudo cargar la imagen desde la URL proporcionada",
+                  description: "No se pudo cargar la imagen desde la URL proporcionada. Verifica que la URL sea correcta y que la imagen sea accesible.",
                   variant: "destructive",
                 });
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully:', previewUrl);
               }}
             />
             <Button
