@@ -50,3 +50,136 @@
     0 4px 8px rgba(0, 0, 0, 0.9),
     0 8px 16px rgba(0, 0, 0, 0.7);
 }
+
+/* Estilos para mejorar la legibilidad en la página de reserva - FORZADOS */
+.reservar-page * {
+  color: #000000 !important;
+}
+
+.reservar-page .text-gray-600,
+.reservar-page .text-gray-500,
+.reservar-page .text-gray-400,
+.reservar-page .text-gray-300 {
+  color: #000000 !important;
+}
+
+/* Estilos específicos para descripciones y textos informativos */
+.reservar-page .card-description,
+.reservar-page .text-sm,
+.reservar-page p,
+.reservar-page span,
+.reservar-page div {
+  color: #000000 !important;
+  font-weight: 600;
+}
+
+/* Estilos para el resumen de reserva */
+.reservar-page .bg-blue-50 *,
+.reservar-page .text-blue-800,
+.reservar-page .text-blue-600 {
+  color: #000000 !important;
+}
+
+/* Estilos para las etiquetas de formulario */
+.reservar-page label,
+.reservar-page .label {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+/* Estilos para placeholders */
+.reservar-page input::placeholder,
+.reservar-page textarea::placeholder {
+  color: #333333 !important;
+}
+
+/* Estilos específicos para la descripción del tour */
+.reservar-page .card-description {
+  color: #000000 !important;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+/* Estilos para badges y elementos especiales */
+.reservar-page .badge,
+.reservar-page .bg-gradient-to-r {
+  color: #ffffff !important;
+}
+
+/* Estilos para botones - mantener el texto blanco */
+.reservar-page button,
+.reservar-page .button {
+  color: inherit !important;
+}
+
+/* Estilos para manejo de imágenes */
+.image-error {
+  background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.image-loading {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Estilos específicos para imágenes en la página de reserva */
+.reservar-page .carousel-image {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reservar-page .carousel-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Mejorar la visualización del carousel */
+.reservar-page .carousel {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para los controles del carousel */
+.reservar-page .carousel-controls {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.reservar-page .carousel-controls button {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reservar-page .carousel-controls button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
