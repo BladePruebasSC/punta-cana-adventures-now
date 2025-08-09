@@ -22,7 +22,7 @@ interface SiteSetting {
 // Translation system
 const translations = {
   es: {
-    heroTitle: "Descubre Todo Punta Cana",
+    heroTitle: "RESERVA TU TOUR AQUI AHORA",
     heroSubtitle: "Transportación • Tours • Excursiones • Experiencias Inolvidables",
     searchPlaceholder: "Buscar tours, aventuras...",
     exploreButton: "Explorar Tours",
@@ -63,7 +63,7 @@ const translations = {
     hours: "7:00 AM - 10:00 PM"
   },
   en: {
-    heroTitle: "Discover All of Punta Cana",
+    heroTitle: "RESERVE YOUR TOUR HERE NOW",
     heroSubtitle: "Transportation • Tours • Excursions • Unforgettable Experiences",
     searchPlaceholder: "Search tours, adventures...",
     exploreButton: "Explore Tours",
@@ -104,7 +104,7 @@ const translations = {
     hours: "7:00 AM - 10:00 PM"
   },
   fr: {
-    heroTitle: "Découvrez Tout Punta Cana",
+    heroTitle: "RÉSERVEZ VOTRE TOUR ICI MAINTENANT",
     heroSubtitle: "Transport • Circuits • Excursions • Expériences Inoubliables",
     searchPlaceholder: "Rechercher des circuits, aventures...",
     exploreButton: "Explorer les Circuits",
@@ -500,7 +500,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Jon Tours
+                  JON TOUR & ADVENTURE
                 </h1>
                 <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
               </div>
