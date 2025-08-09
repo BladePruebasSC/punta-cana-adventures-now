@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
+import SafeImage from '@/components/SafeImage';
 
 interface Tour {
   id: string;
@@ -69,6 +70,8 @@ const Reservar = () => {
         .single();
 
       if (tourError) throw tourError;
+      console.log('Tour data loaded:', tourData);
+      console.log('Tour image URL:', tourData?.image_url);
       setTour(tourData);
 
       // Fetch tour images
@@ -79,6 +82,12 @@ const Reservar = () => {
         .order('order_index', { ascending: true });
 
       if (imagesError) throw imagesError;
+      console.log('Tour images loaded:', imagesData);
+      if (imagesData) {
+        imagesData.forEach((img, index) => {
+          console.log(`Image ${index + 1}:`, img.image_url);
+        });
+      }
       setTourImages(imagesData || []);
 
     } catch (error) {
@@ -207,7 +216,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 reservar-page">
       <header className="bg-white/95 backdrop-blur-sm shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-4">
@@ -231,9 +240,9 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <div className="relative">
                 {tourImages.length > 0 ? (
@@ -241,11 +250,16 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     <CarouselContent>
                       {tourImages.map((image, index) => (
                         <CarouselItem key={image.id}>
-                          <img 
-                            src={image.image_url} 
-                            alt={image.alt_text || tour.title}
-                            className="w-full h-64 object-cover rounded-t-lg"
-                          />
+                          <div className="carousel-image">
+                            <SafeImage 
+                              src={image.image_url} 
+                              alt={image.alt_text || tour.title}
+                              className="w-full h-96 object-contain rounded-t-lg bg-gray-100"
+                              onError={(errorUrl) => {
+                                console.error('Error loading tour image:', errorUrl);
+                              }}
+                            />
+                          </div>
                         </CarouselItem>
                       ))}
                     </CarouselContent>
@@ -257,11 +271,16 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     )}
                   </Carousel>
                 ) : (
-                  <img 
-                    src={tour.image_url} 
-                    alt={tour.title}
-                    className="w-full h-64 object-cover rounded-t-lg"
-                  />
+                  <div className="carousel-image">
+                    <SafeImage 
+                      src={tour.image_url} 
+                      alt={tour.title}
+                      className="w-full h-96 object-contain rounded-t-lg bg-gray-100"
+                      onError={(errorUrl) => {
+                        console.error('Error loading tour image:', errorUrl);
+                      }}
+                    />
+                  </div>
                 )}
                 
                 <div className="absolute top-4 right-4">
@@ -331,7 +350,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
             </Card>
           </div>
 
-          <div>
+          <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
