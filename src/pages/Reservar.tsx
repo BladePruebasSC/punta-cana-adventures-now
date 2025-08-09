@@ -10,10 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
+import { toursCache, tourImagesCache, CACHE_KEYS } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
-import SafeImage from '@/components/SafeImage';
+import RobustImage from '@/components/RobustImage';
 
 interface Tour {
   id: string;
@@ -62,32 +63,44 @@ const Reservar = () => {
 
   const fetchTourData = async () => {
     try {
-      // Fetch tour info
-      const { data: tourData, error: tourError } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('id', tourId)
-        .single();
+      // Check cache first
+      const cachedTour = toursCache.get<Tour>(CACHE_KEYS.TOUR_DETAIL(tourId));
+      const cachedImages = tourImagesCache.get<TourImage[]>(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId));
+      
+      if (cachedTour && cachedImages) {
+        console.log('Using cached tour data');
+        setTour(cachedTour);
+        setTourImages(cachedImages);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch tour info and images in parallel for better performance
+      const [tourResponse, imagesResponse] = await Promise.all([
+        supabase
+          .from('posts')
+          .select('*')
+          .eq('id', tourId)
+          .single(),
+        supabase
+          .from('tour_images')
+          .select('*')
+          .eq('tour_id', tourId)
+          .order('order_index', { ascending: true })
+      ]);
+
+      const { data: tourData, error: tourError } = tourResponse;
+      const { data: imagesData, error: imagesError } = imagesResponse;
 
       if (tourError) throw tourError;
-      console.log('Tour data loaded:', tourData);
-      console.log('Tour image URL:', tourData?.image_url);
-      setTour(tourData);
-
-      // Fetch tour images
-      const { data: imagesData, error: imagesError } = await supabase
-        .from('tour_images')
-        .select('*')
-        .eq('tour_id', tourId)
-        .order('order_index', { ascending: true });
-
       if (imagesError) throw imagesError;
-      console.log('Tour images loaded:', imagesData);
-      if (imagesData) {
-        imagesData.forEach((img, index) => {
-          console.log(`Image ${index + 1}:`, img.image_url);
-        });
-      }
+
+      // Cache the data
+      toursCache.set(CACHE_KEYS.TOUR_DETAIL(tourId), tourData, 10 * 60 * 1000); // 10 minutes
+      tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId), imagesData || [], 10 * 60 * 1000);
+
+      console.log('Tour data loaded:', tourData);
+      setTour(tourData);
       setTourImages(imagesData || []);
 
     } catch (error) {
@@ -251,7 +264,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       {tourImages.map((image, index) => (
                         <CarouselItem key={image.id}>
                           <div className="carousel-image">
-                            <SafeImage 
+                            <RobustImage 
                               src={image.image_url} 
                               alt={image.alt_text || tour.title}
                               className="w-full h-96 object-contain rounded-t-lg bg-gray-100"
@@ -272,7 +285,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </Carousel>
                 ) : (
                   <div className="carousel-image">
-                    <SafeImage 
+                    <RobustImage 
                       src={tour.image_url} 
                       alt={tour.title}
                       className="w-full h-96 object-contain rounded-t-lg bg-gray-100"

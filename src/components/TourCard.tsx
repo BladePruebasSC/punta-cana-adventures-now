@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Clock, Users, Star, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ interface TourCardProps {
   reserveText: string;
 }
 
-const TourCard: React.FC<TourCardProps> = ({ 
+const TourCard: React.FC<TourCardProps> = memo(({ 
   tour, 
   onTourClick, 
   onReserveClick, 
@@ -139,6 +139,6 @@ const TourCard: React.FC<TourCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
 
-export default TourCard;
+export default memo(TourCard);
