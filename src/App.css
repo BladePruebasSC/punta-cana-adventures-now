@@ -183,3 +183,78 @@
   background: rgba(255, 255, 255, 1);
   transform: scale(1.1);
 }
+
+/* Estilos específicos para móvil */
+@media (max-width: 768px) {
+  /* Mejorar la legibilidad del texto en móvil */
+  .hero-title-shadow {
+    text-shadow: 
+      0 0 8px rgba(0, 0, 0, 0.9),
+      0 0 16px rgba(0, 0, 0, 0.8),
+      0 0 24px rgba(0, 0, 0, 0.7),
+      0 2px 4px rgba(0, 0, 0, 1),
+      0 4px 8px rgba(0, 0, 0, 0.9);
+  }
+  
+  /* Mejorar el espaciado en móvil */
+  .mobile-spacing {
+    padding: 1rem;
+  }
+  
+  /* Optimizar botones para móvil */
+  .mobile-button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  /* Mejorar la navegación móvil */
+  .mobile-nav {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Optimizar cards para móvil */
+  .mobile-card {
+    margin-bottom: 1rem;
+  }
+  
+  /* Mejorar el footer en móvil */
+  .mobile-footer {
+    text-align: center;
+  }
+  
+  /* Optimizar imágenes para móvil */
+  .mobile-image {
+    height: 200px;
+  }
+  
+  /* Mejorar la experiencia táctil */
+  .touch-friendly {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Optimizar texto para móvil */
+  .mobile-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  /* Mejorar contraste en móvil */
+  .mobile-contrast {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Optimizar grid para móvil */
+  .mobile-grid {
+    gap: 0.75rem;
+  }
+  
+  /* Mejorar botones de acción */
+  .mobile-action-button {
+    height: 40px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}

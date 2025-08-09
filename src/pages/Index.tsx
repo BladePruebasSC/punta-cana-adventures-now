@@ -374,26 +374,25 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Jon Tours and Adventure
+                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                  Jon Tours
                 </h1>
-                <p className="text-sm text-gray-600">{t.authenticExperiences}</p>
+                <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
               </div>
             </div>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-6">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
               <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
               <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
-              <a href="/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -402,44 +401,37 @@ const Index = () => {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-700" />
+                <X className="w-5 h-5 text-gray-700" />
               ) : (
-                <Menu className="w-6 h-6 text-gray-700" />
+                <Menu className="w-5 h-5 text-gray-700" />
               )}
             </button>
           </div>
 
           {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
-              <nav className="flex flex-col space-y-4">
+            <div className="md:hidden border-t border-gray-200 py-3">
+              <nav className="flex flex-col space-y-3">
                 <a 
                   href="#tours" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Tours
                 </a>
                 <a 
                   href="/nosotros" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Nosotros
                 </a>
                 <a 
                   href="/contacto" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Contacto
-                </a>
-                <a 
-                  href="/dashboard" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-1"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Dashboard
                 </a>
               </nav>
             </div>
@@ -448,37 +440,37 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url(${heroBackgroundImage})`
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 to-emerald-900/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
         </div>
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-                                <h2 className="text-5xl md:text-7xl font-bold mb-3 animate-fade-in whitespace-nowrap hero-title-shadow">
-             {t.heroTitle}
-           </h2>
-           <p className="text-xl md:text-2xl mb-8 animate-fade-in opacity-90">
-             {t.heroSubtitle.split('•').map((part, index, array) => (
-               <span key={index}>
-                 {part.trim()}
-                                   {index < array.length - 1 && (
-                    <span className="text-yellow-300 mx-2 font-bold text-2xl drop-shadow-lg">•</span>
-                  )}
-               </span>
-             ))}
-           </p>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
+            {t.heroTitle}
+          </h2>
+          <p className="text-base sm:text-lg md:text-2xl mb-4 md:mb-8 animate-fade-in opacity-90 px-2">
+            {t.heroSubtitle.split('•').map((part, index, array) => (
+              <span key={index}>
+                {part.trim()}
+                {index < array.length - 1 && (
+                  <span className="text-yellow-300 mx-1 md:mx-2 font-bold text-lg md:text-2xl drop-shadow-lg">•</span>
+                )}
+              </span>
+            ))}
+          </p>
           
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 justify-center items-center mb-4 w-full max-w-sm mx-auto">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
               <Input 
                 placeholder={t.searchPlaceholder} 
-                className="pl-10 h-12 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70"
+                className="pl-10 h-11 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 text-sm"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
@@ -486,23 +478,23 @@ const Index = () => {
             <Button 
               type="submit"
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-12 px-8"
+              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-11 px-6 w-full text-sm"
             >
               {t.exploreButton}
             </Button>
           </form>
 
-          <div className="flex flex-wrap justify-center gap-4 text-sm">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-              <Star className="w-4 h-4 text-yellow-400" />
+          <div className="flex flex-wrap justify-center gap-2 text-xs">
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <Star className="w-3 h-3 text-yellow-400" />
               <span>{t.reviews}</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-              <Users className="w-4 h-4" />
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <Users className="w-3 h-3" />
               <span>{t.smallGroups}</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-              <MapPin className="w-4 h-4" />
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <MapPin className="w-3 h-3" />
               <span>{t.localGuides}</span>
             </div>
           </div>
@@ -510,12 +502,12 @@ const Index = () => {
       </section>
 
       {/* Tours Section */}
-      <section id="tours" className="py-16 px-4 max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h3 className="text-4xl font-bold text-gray-900 mb-4">
+      <section id="tours" className="py-6 md:py-16 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-6 md:mb-12">
+          <h3 className="text-xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
             {t.featuredTours}
           </h3>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm md:text-xl text-gray-600 max-w-2xl mx-auto px-2">
             {t.featuredSubtitle}
           </p>
         </div>
@@ -543,20 +535,20 @@ const Index = () => {
         )}
 
         {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
+        <div className="flex flex-wrap justify-center gap-2 mb-4 md:mb-10 px-2">
           {categories.map((category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               onClick={() => setSelectedCategory(category.id)}
-              className={`rounded-full ${
+              className={`rounded-full text-xs md:text-base h-8 md:h-10 ${
                 selectedCategory === category.id 
                   ? 'bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700' 
                   : 'hover:bg-blue-50'
               }`}
             >
               {category.name}
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-1 text-xs">
                 {category.count}
               </Badge>
             </Button>
@@ -586,7 +578,7 @@ const Index = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 lg:gap-8">
             {filteredTours.map((tour) => (
               <TourCard
                 key={tour.id}
@@ -601,26 +593,26 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-16 px-4">
+      <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-6 md:py-16 px-4">
         <div className="max-w-4xl mx-auto text-center text-white">
-          <h3 className="text-4xl font-bold mb-4">
+          <h3 className="text-xl md:text-4xl font-bold mb-2 md:mb-4">
             {t.readyForAdventure}
           </h3>
-          <p className="text-xl mb-8 opacity-90">
+          <p className="text-sm md:text-xl mb-4 md:mb-8 opacity-90 px-2">
             {t.contactExperts}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col gap-3 justify-center">
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100"
+              className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
               onClick={handleWhatsAppClick}
             >
-              <WhatsAppIcon className="w-5 h-5 mr-2" />
+              <WhatsAppIcon className="w-4 h-4 mr-2" />
               WhatsApp +1 (809) 840-8257
             </Button>
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100"
+              className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
               onClick={handleEmailClick}
             >
               Email: info@jontours.com
@@ -630,8 +622,8 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="bg-gray-900 text-white py-6 md:py-12 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
