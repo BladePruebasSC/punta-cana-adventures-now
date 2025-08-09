@@ -19,14 +19,20 @@ const SafeImage: React.FC<SafeImageProps> = ({
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    // Solo validar que la URL sea válida, sin hacer fetch previo para evitar problemas de CORS
+    // Reset states when src changes
+    setHasError(false);
+    setIsLoading(true);
+    setRetryCount(0);
+    
     if (!isValidImageUrl(src)) {
       console.error('Invalid image URL:', src);
       setImgSrc(fallbackSrc);
       setHasError(true);
       onError?.(src);
+      setIsLoading(false);
     } else {
       // Procesar URL de Unsplash para evitar problemas de CORS
       const processedUrl = checkUnsplashUrl(src);
@@ -39,18 +45,47 @@ const SafeImage: React.FC<SafeImageProps> = ({
     console.error('Error loading image:', imgSrc);
     logImageLoadStatus(imgSrc, false);
     
-    if (!hasError) {
-      // Intentar con una URL alternativa antes de usar el fallback
-      const alternativeUrl = getAlternativeImageUrl(imgSrc);
-      if (alternativeUrl !== imgSrc && alternativeUrl !== fallbackSrc) {
-        setImgSrc(alternativeUrl);
-        return;
-      }
+    if (retryCount < 3) {
+      // Intentar diferentes estrategias de fallback
+      setRetryCount(prev => prev + 1);
       
-      setHasError(true);
-      setImgSrc(fallbackSrc);
-      onError?.(imgSrc);
+      if (retryCount === 0) {
+        // Primera alternativa: URL con parámetros diferentes
+        const alternativeUrl = getAlternativeImageUrl(imgSrc);
+        if (alternativeUrl !== imgSrc && alternativeUrl !== fallbackSrc) {
+          setImgSrc(alternativeUrl);
+          return;
+        }
+      } else if (retryCount === 1) {
+        // Segunda alternativa: URL original sin procesar
+        if (imgSrc !== src) {
+          setImgSrc(src);
+          return;
+        }
+      } else if (retryCount === 2) {
+        // Tercera alternativa: URL de Unsplash con parámetros básicos
+        if (imgSrc.includes('unsplash.com')) {
+          try {
+            const url = new URL(imgSrc);
+            url.searchParams.set('w', '800');
+            url.searchParams.set('q', '80');
+            const basicUrl = url.toString();
+            if (basicUrl !== imgSrc) {
+              setImgSrc(basicUrl);
+              return;
+            }
+          } catch (error) {
+            console.error('Error processing Unsplash URL:', error);
+          }
+        }
+      }
     }
+    
+    // Si todas las alternativas fallan, usar el fallback
+    setHasError(true);
+    setImgSrc(fallbackSrc);
+    onError?.(imgSrc);
+    setIsLoading(false);
   };
 
   const handleLoad = () => {
@@ -68,9 +103,10 @@ const SafeImage: React.FC<SafeImageProps> = ({
         onError={handleError}
         onLoad={handleLoad}
         loading="lazy"
+        crossOrigin="anonymous"
       />
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-gray-500 text-sm">Cargando imagen...</div>
         </div>
       )}

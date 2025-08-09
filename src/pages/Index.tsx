@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, MapPin, Star, Clock, Users, Filter, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
+import { toursCache, tourImagesCache, siteSettingsCache, CACHE_KEYS } from '@/lib/cache';
+import { preloadTourImages } from '@/lib/imagePreloader';
 import { useNavigate } from 'react-router-dom';
 import TourCard from '@/components/TourCard';
 import TourDetailModal from '@/components/TourDetailModal';
@@ -203,6 +205,7 @@ const Index = () => {
   const [tours, setTours] = useState<Tour[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
   const [loading, setLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
@@ -217,49 +220,131 @@ const Index = () => {
   ]);
 
   useEffect(() => {
-    fetchTours();
-    fetchSiteSettings();
+    // Precargar la imagen de fondo por defecto inmediatamente
+    const preloadDefaultImage = new Image();
+    preloadDefaultImage.src = heroBackgroundImage;
+    
+    // Load site settings first (they're needed for the hero background)
+    const loadInitialData = async () => {
+      await fetchSiteSettings();
+      await fetchTours();
+    };
+    
+    loadInitialData();
   }, []);
 
   const fetchSiteSettings = async () => {
     try {
+      // Check cache first
+      const cachedSettings = siteSettingsCache.get<SiteSetting[]>(CACHE_KEYS.SITE_SETTINGS);
+      
+      if (cachedSettings) {
+        console.log('🚀 Using cached site settings - Fast load!');
+              const bgSetting = cachedSettings.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
+      if (bgSetting) {
+        // Precargar la imagen antes de establecerla
+        const img = new Image();
+        img.onload = () => {
+          setHeroBackgroundImage(bgSetting.setting_value);
+          setSettingsLoaded(true);
+        };
+        img.onerror = () => {
+          console.warn('Failed to load hero background image, keeping default');
+          setSettingsLoaded(true);
+        };
+        img.src = bgSetting.setting_value;
+      } else {
+        setSettingsLoaded(true);
+      }
+      return;
+      }
+
       const { data: settingsData, error } = await supabase
         .from('site_settings')
         .select('*');
 
       if (error) throw error;
 
+      // Cache the settings
+      siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], 30 * 60 * 1000); // 30 minutes
+      console.log('⚡ Site settings cached for faster future loads');
+
       const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
       if (bgSetting) {
-        setHeroBackgroundImage(bgSetting.setting_value);
+        // Precargar la imagen antes de establecerla
+        const img = new Image();
+        img.onload = () => {
+          setHeroBackgroundImage(bgSetting.setting_value);
+          setSettingsLoaded(true);
+        };
+        img.onerror = () => {
+          console.warn('Failed to load hero background image, keeping default');
+          setSettingsLoaded(true);
+        };
+        img.src = bgSetting.setting_value;
+      } else {
+        setSettingsLoaded(true);
       }
     } catch (error) {
       console.error('Error fetching site settings:', error);
       // Keep default background image if there's an error
+      setSettingsLoaded(true);
     }
   };
 
   const fetchTours = async () => {
     try {
-      // Fetch tours
-      const { data: toursData, error: toursError } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Check cache first
+      const cachedTours = toursCache.get<Tour[]>(CACHE_KEYS.TOURS);
+      const cachedImages = tourImagesCache.get<Record<string, TourImage[]>>(CACHE_KEYS.TOUR_IMAGES);
+      
+      if (cachedTours && cachedImages) {
+        console.log('🚀 Using cached data - Fast load!');
+        setTours(cachedTours);
+        setTourImages(cachedImages);
+        
+        // Update category counts
+        const tourCount = cachedTours.length;
+        const categoryCounts = cachedTours.reduce((acc, tour) => {
+          acc[tour.category] = (acc[tour.category] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const updatedCategories = categories.map(cat => {
+          if (cat.id === 'todos') {
+            return { ...cat, count: tourCount };
+          } else {
+            return { ...cat, count: categoryCounts[cat.id] || 0 };
+          }
+        });
+        
+        setCategories(updatedCategories);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch tours and images in parallel for better performance
+      const [toursResponse, imagesResponse] = await Promise.all([
+        supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('tour_images')
+          .select('*')
+          .order('order_index', { ascending: true })
+      ]);
+
+      const { data: toursData, error: toursError } = toursResponse;
+      const { data: imagesData, error: imagesError } = imagesResponse;
 
       if (toursError) throw toursError;
-      
-      setTours(toursData || []);
-      
-      // Fetch all tour images
-      const { data: imagesData, error: imagesError } = await supabase
-        .from('tour_images')
-        .select('*')
-        .order('order_index', { ascending: true });
-
       if (imagesError) throw imagesError;
-
-      // Group images by tour_id
+      
+      // Cache the data
+      toursCache.set(CACHE_KEYS.TOURS, toursData || []);
+      
+      // Group images by tour_id more efficiently
       const imagesByTour: Record<string, TourImage[]> = {};
       (imagesData || []).forEach(image => {
         if (!imagesByTour[image.tour_id]) {
@@ -268,19 +353,36 @@ const Index = () => {
         imagesByTour[image.tour_id].push(image);
       });
       
+      tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour);
+      
+      console.log('⚡ Data cached for faster future loads');
+      
+      setTours(toursData || []);
       setTourImages(imagesByTour);
       
-      // Update category counts with actual data
+      // Update category counts more efficiently
+      const tourCount = toursData?.length || 0;
+      const categoryCounts = toursData?.reduce((acc, tour) => {
+        acc[tour.category] = (acc[tour.category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+      
       const updatedCategories = categories.map(cat => {
         if (cat.id === 'todos') {
-          return { ...cat, count: toursData?.length || 0 };
+          return { ...cat, count: tourCount };
         } else {
-          const count = toursData?.filter(tour => tour.category === cat.id).length || 0;
-          return { ...cat, count };
+          return { ...cat, count: categoryCounts[cat.id] || 0 };
         }
       });
       
       setCategories(updatedCategories);
+      
+      // Precargar imágenes en segundo plano para mejor rendimiento
+      if (toursData && imagesByTour) {
+        setTimeout(() => {
+          preloadTourImages(toursData, imagesByTour);
+        }, 100);
+      }
     } catch (error) {
       console.error('Error fetching tours:', error);
     } finally {
@@ -288,51 +390,53 @@ const Index = () => {
     }
   };
 
-  // Filter tours based on search term and selected category
-  const filteredTours = tours.filter(tour => {
-    // Filter by category
-    const matchesCategory = selectedCategory === 'todos' || tour.category === selectedCategory;
-    
-    // Filter by search term
-    const matchesSearch = searchTerm === '' || 
-      tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tour.highlights.some(highlight => 
-        highlight.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    
-    return matchesCategory && matchesSearch;
-  });
+  // Filter tours based on search term and selected category - optimized with useMemo
+  const filteredTours = useMemo(() => {
+    return tours.filter(tour => {
+      // Filter by category
+      const matchesCategory = selectedCategory === 'todos' || tour.category === selectedCategory;
+      
+      // Filter by search term
+      const matchesSearch = searchTerm === '' || 
+        tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.highlights.some(highlight => 
+          highlight.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      
+      return matchesCategory && matchesSearch;
+    });
+  }, [tours, selectedCategory, searchTerm]);
 
-  const handleReserveNow = (tourId: string, e?: React.MouseEvent) => {
+  const handleReserveNow = useCallback((tourId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
     }
     navigate(`/reservar/${tourId}`);
-  };
+  }, [navigate]);
 
-  const handleTourClick = (tourId: string) => {
+  const handleTourClick = useCallback((tourId: string) => {
     const tour = tours.find(t => t.id === tourId);
     if (tour) {
       setSelectedTour(tour);
       setModalOpen(true);
     }
-  };
+  }, [tours]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setModalOpen(false);
     setSelectedTour(null);
-  };
+  }, []);
 
-  const handleReserveFromModal = (tourId: string) => {
+  const handleReserveFromModal = useCallback((tourId: string) => {
     setModalOpen(false);
     setSelectedTour(null);
     navigate(`/reservar/${tourId}`);
-  };
+  }, [navigate]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-  };
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,6 +473,20 @@ const Index = () => {
     const body = encodeURIComponent('Hola,\n\nMe interesa obtener más información sobre sus tours en Punta Cana.\n\nGracias');
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
+
+  if (loading || !settingsLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">
+            {!settingsLoaded ? 'Cargando configuración...' : 'Cargando tours...'}
+          </p>
+          <p className="text-gray-500 text-sm mt-2">Optimizando para mejor rendimiento...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
