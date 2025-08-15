@@ -112,7 +112,7 @@
   color: inherit !important;
 }
 
-/* Estilos para manejo de imágenes */
+/* Estilos optimizados para manejo de imágenes */
 .image-error {
   background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
   display: flex;
@@ -126,6 +126,7 @@
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
+  will-change: background-position;
 }
 
 /* Mejorar la visualización de imágenes en carga */
@@ -143,20 +144,23 @@
   max-height: 100%;
   object-fit: contain;
   transition: opacity 0.3s ease;
+  will-change: opacity;
 }
 
 .carousel-image img[src*="placeholder"] {
   opacity: 0.7;
 }
 
-/* Estilos para el estado de carga */
+/* Estilos optimizados para el estado de carga */
 .image-loading-state {
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
   border-radius: 0.5rem;
+  will-change: background-position;
 }
 
+/* Animación optimizada para loading */
 @keyframes loading {
   0% {
     background-position: 200% 0;
@@ -164,6 +168,21 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Animación optimizada para pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity;
 }
 
 /* Estilos específicos para imágenes en la página de reserva */
@@ -188,16 +207,12 @@
 }
 
 /* Estilos para los controles del carousel */
-.reservar-page .carousel-controls {
+.carousel-controls {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-}
-
-.reservar-page .carousel-controls button {
   background: rgba(255, 255, 255, 0.9);
-  border: none;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -205,12 +220,78 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  will-change: transform, background-color;
 }
 
-.reservar-page .carousel-controls button:hover {
+.carousel-controls:hover {
   background: rgba(255, 255, 255, 1);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-controls.prev {
+  left: 10px;
+}
+
+.carousel-controls.next {
+  right: 10px;
+}
+
+/* Optimizaciones para transiciones */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity, background-color;
+}
+
+.transition-transform {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.transition-colors {
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: color, background-color;
+}
+
+/* Optimizaciones para hover effects */
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.hover\:scale-110:hover {
   transform: scale(1.1);
+}
+
+.hover\:shadow-xl:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Optimizaciones para imágenes responsivas */
+img {
+  max-width: 100%;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Optimizaciones para contenedores de imágenes */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+/* Placeholder optimizado */
+.image-placeholder {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  min-height: 200px;
 }
 
 /* Estilos específicos para móvil */

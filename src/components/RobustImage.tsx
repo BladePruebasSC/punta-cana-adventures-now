@@ -55,6 +55,7 @@ const RobustImage: React.FC<RobustImageProps> = memo(({
         loading="lazy"
         crossOrigin="anonymous"
       />
+      
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-gray-500 text-sm">Cargando imagen...</div>
@@ -71,5 +72,7 @@ const RobustImage: React.FC<RobustImageProps> = memo(({
     </div>
   );
 });
+
+RobustImage.displayName = 'RobustImage';
 
 export default RobustImage;

@@ -311,23 +311,23 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
               
               <CardHeader>
                 <CardTitle className="text-2xl">{tour.title}</CardTitle>
-                <CardDescription className="text-base">{tour.description}</CardDescription>
+                <CardDescription className="text-base text-black font-semibold leading-relaxed">{tour.description}</CardDescription>
               </CardHeader>
               
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-black font-medium">
                     <Clock className="w-5 h-5" />
                     <span>{tour.duration}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-black font-medium">
                     <Users className="w-5 h-5" />
                     <span>{tour.group_size}</span>
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold mb-2">Lo que incluye:</h4>
+                  <h4 className="font-semibold mb-2 text-black">Lo que incluye:</h4>
                   <div className="flex flex-wrap gap-2">
                     {tour.highlights.map((highlight, index) => (
                       <Badge key={index} variant="secondary">
@@ -355,7 +355,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 </div>
 
                 {tourImages.length > 1 && (
-                  <div className="text-sm text-gray-600 text-center">
+                  <div className="text-sm text-black text-center font-medium">
                     📸 {tourImages.length} fotos disponibles - Usa las flechas para ver más
                   </div>
                 )}
@@ -366,11 +366,11 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-black">
                   <Calendar className="w-5 h-5" />
                   Reservar este Tour
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-black font-medium">
                   Completa el formulario para reservar tu aventura
                 </CardDescription>
               </CardHeader>
@@ -379,7 +379,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nombre Completo *</Label>
+                      <Label htmlFor="name" className="text-black font-semibold">Nombre Completo *</Label>
                       <Input
                         id="name"
                         name="name"
@@ -391,7 +391,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email" className="text-black font-semibold">Email *</Label>
                       <Input
                         id="email"
                         name="email"
@@ -406,7 +406,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono *</Label>
+                      <Label htmlFor="phone" className="text-black font-semibold">Teléfono *</Label>
                       <Input
                         id="phone"
                         name="phone"
@@ -419,7 +419,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="guests">Número de Huéspedes *</Label>
+                      <Label htmlFor="guests" className="text-black font-semibold">Número de Huéspedes *</Label>
                       <Input
                         id="guests"
                         name="guests"
@@ -434,7 +434,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date">Fecha Preferida *</Label>
+                    <Label htmlFor="date" className="text-black font-semibold">Fecha Preferida *</Label>
                     <Input
                       id="date"
                       name="date"
@@ -447,7 +447,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="special_requests">Solicitudes Especiales</Label>
+                    <Label htmlFor="special_requests" className="text-black font-semibold">Solicitudes Especiales</Label>
                     <Textarea
                       id="special_requests"
                       name="special_requests"
@@ -488,7 +488,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     {submitting ? 'Procesando...' : 'Confirmar Reserva'}
                   </Button>
                   
-                  <p className="text-sm text-gray-600 text-center">
+                  <p className="text-sm text-black text-center font-medium">
                     * Esta es una pre-reserva. Te contactaremos para confirmar disponibilidad y procesar el pago.
                   </p>
                 </form>

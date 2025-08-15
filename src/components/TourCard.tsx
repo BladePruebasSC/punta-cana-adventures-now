@@ -48,7 +48,9 @@ const TourCard: React.FC<TourCardProps> = memo(({
           src={tour.image_url} 
           alt={tour.title}
           className="w-full h-40 sm:h-56 object-cover transition-transform duration-300 group-hover:scale-110"
+          loading="lazy"
         />
+        
         <div className="absolute top-2 left-2 flex gap-1">
           <Badge variant="secondary" className="bg-white/90 text-gray-800 font-medium text-xs">
             ${tour.price}
@@ -101,11 +103,6 @@ const TourCard: React.FC<TourCardProps> = memo(({
                   {highlight}
                 </span>
               ))}
-              {tour.highlights.length > 2 && (
-                <span className="text-xs text-gray-500 px-1.5 py-1">
-                  +{tour.highlights.length - 2} más
-                </span>
-              )}
             </div>
           </div>
         )}
@@ -113,11 +110,11 @@ const TourCard: React.FC<TourCardProps> = memo(({
         <div className="flex gap-2">
           <Button 
             onClick={(e) => onReserveClick(tour.id, e)}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-medium text-xs h-8"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
           >
             {reserveText}
           </Button>
-          <Button 
+          <Button
             onClick={(e) => {
               e.stopPropagation();
               sendWhatsAppMessage({
@@ -130,10 +127,9 @@ const TourCard: React.FC<TourCardProps> = memo(({
             }}
             variant="outline"
             size="icon"
-            className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 h-8 w-8"
-            title="Contáctame por WhatsApp"
+            className="flex-shrink-0"
           >
-            <WhatsAppIcon className="w-3 h-3" />
+            <WhatsAppIcon className="w-4 h-4" />
           </Button>
         </div>
       </CardContent>
@@ -141,4 +137,6 @@ const TourCard: React.FC<TourCardProps> = memo(({
   );
 });
 
-export default memo(TourCard);
+TourCard.displayName = 'TourCard';
+
+export default TourCard;
