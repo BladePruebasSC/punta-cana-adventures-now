@@ -211,6 +211,7 @@ const Index = () => {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+  const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
     { id: 'aventura', name: t.adventure, count: 0 },
@@ -232,6 +233,31 @@ const Index = () => {
     
     loadInitialData();
   }, []);
+
+  // Keyboard listener for dashboard access
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const newSequence = keySequence + event.key.toUpperCase();
+      setKeySequence(newSequence);
+      
+      // Check if the sequence ends with "CDERF"
+      if (newSequence.endsWith('CDERF')) {
+        navigate('/dashboard');
+        setKeySequence(''); // Reset sequence
+      }
+      
+      // Reset sequence if it gets too long or doesn't match
+      if (newSequence.length > 10) {
+        setKeySequence('');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [keySequence, navigate]);
 
   const fetchSiteSettings = async () => {
     try {
