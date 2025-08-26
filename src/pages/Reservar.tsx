@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X } from 'lucide-react';
+import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -160,28 +160,36 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       const phoneNumber = '18098408257';
       const encodedMessage = encodeURIComponent(whatsappMessage);
       
-      // iOS-friendly WhatsApp redirect
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      // Mostrar mensaje de éxito
+      toast({
+        title: "¡Reserva enviada!",
+        description: "Redirigiendo a WhatsApp para confirmar tu reserva...",
+      });
       
+      // Redirigir a WhatsApp después de un breve delay
       setTimeout(() => {
+        // Detectar si es iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
         if (isIOS) {
-          // For iOS, use whatsapp:// protocol first
+          // Para iOS, usar el protocolo whatsapp:// primero
           window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
           
-          // Fallback to web version after a short delay if the app doesn't open
+          // Fallback a la versión web si la app no se abre
           setTimeout(() => {
             const fallbackUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
             window.open(fallbackUrl, '_blank');
-          }, 1500);
+          }, 2000);
         } else {
+          // Para Android y otros dispositivos
           window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
         }
         
-        // Navigate back after WhatsApp redirect
+        // Navegar de vuelta después de la redirección a WhatsApp
         setTimeout(() => {
           navigate('/');
-        }, 2000);
-      }, 1000);
+        }, 3000);
+      }, 1500);
 
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -557,11 +565,33 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base py-3"
                     disabled={submitting}
                   >
-                    {submitting ? 'Procesando...' : 'Confirmar Reserva'}
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Confirmar y Contactar por WhatsApp
+                      </>
+                    )}
                   </Button>
                   
-                  <p className="text-xs sm:text-sm text-black text-center font-medium">
-                    * Esta es una pre-reserva. Te contactaremos para confirmar disponibilidad y procesar el pago.
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                    <div className="flex items-start space-x-2">
+                      <MessageCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs sm:text-sm text-green-800">
+                        <p className="font-medium mb-1">¿Cómo funciona?</p>
+                        <p>1. Completa el formulario y haz clic en "Confirmar"</p>
+                        <p>2. Se abrirá WhatsApp automáticamente con tu reserva</p>
+                        <p>3. Confirma los detalles y coordina el pago con nuestro equipo</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs sm:text-sm text-black text-center font-medium mt-3">
+                    * No se procesarán pagos digitales. El pago se coordinará directamente por WhatsApp.
                   </p>
                 </form>
               </CardContent>
