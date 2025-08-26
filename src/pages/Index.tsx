@@ -199,8 +199,8 @@ const Index = () => {
       { id: 'cultura', name: t.culture, count: 0 },
       { id: 'naturaleza', name: t.nature, count: 0 }
     ]);
-  }, [currentLanguage, t]);
-  
+  }, [t]);
+
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [tours, setTours] = useState<Tour[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
@@ -210,6 +210,7 @@ const Index = () => {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -218,6 +219,17 @@ const Index = () => {
     { id: 'cultura', name: t.culture, count: 0 },
     { id: 'naturaleza', name: t.nature, count: 0 }
   ]);
+
+  // Preload hero image when URL changes
+  useEffect(() => {
+    if (heroBackgroundImage) {
+      setHeroImageLoaded(false);
+      const img = new Image();
+      img.onload = () => setHeroImageLoaded(true);
+      img.onerror = () => setHeroImageLoaded(true); // Fallback if image fails
+      img.src = heroBackgroundImage;
+    }
+  }, [heroBackgroundImage]);
 
   // Carga ultra-rápida de datos
   useEffect(() => {
@@ -291,6 +303,13 @@ const Index = () => {
             const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
             if (bgSetting) {
               setHeroBackgroundImage(bgSetting.setting_value);
+            }
+            
+            // Preload hero image for smooth transition
+            if (heroBackgroundImage) {
+              const img = new Image();
+              img.onload = () => setHeroImageLoaded(true);
+              img.src = heroBackgroundImage;
             }
 
             console.log('✅ Additional data loaded and cached');
@@ -527,13 +546,22 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ${
+            heroImageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
           style={{
             backgroundImage: `url(${heroBackgroundImage})`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
         </div>
+        
+        {/* Loading placeholder */}
+        {!heroImageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-emerald-600 animate-pulse">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
+          </div>
+        )}
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
