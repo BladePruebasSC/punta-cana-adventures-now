@@ -210,7 +210,7 @@ const Index = () => {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as loaded for initial image
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -223,10 +223,15 @@ const Index = () => {
   // Preload hero image when URL changes
   useEffect(() => {
     if (heroBackgroundImage) {
-      setHeroImageLoaded(false);
       const img = new Image();
-      img.onload = () => setHeroImageLoaded(true);
-      img.onerror = () => setHeroImageLoaded(true); // Fallback if image fails
+      img.onload = () => {
+        console.log('✅ Hero image loaded successfully:', heroBackgroundImage);
+        setHeroImageLoaded(true);
+      };
+      img.onerror = () => {
+        console.error('❌ Hero image failed to load:', heroBackgroundImage);
+        setHeroImageLoaded(true); // Fallback if image fails
+      };
       img.src = heroBackgroundImage;
     }
   }, [heroBackgroundImage]);
@@ -301,15 +306,9 @@ const Index = () => {
 
             // Configurar imagen de fondo del hero
             const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-            if (bgSetting) {
+            if (bgSetting && bgSetting.setting_value !== heroBackgroundImage) {
+              setHeroImageLoaded(false); // Reset loading state for new image
               setHeroBackgroundImage(bgSetting.setting_value);
-            }
-            
-            // Preload hero image for smooth transition
-            if (heroBackgroundImage) {
-              const img = new Image();
-              img.onload = () => setHeroImageLoaded(true);
-              img.src = heroBackgroundImage;
             }
 
             console.log('✅ Additional data loaded and cached');
