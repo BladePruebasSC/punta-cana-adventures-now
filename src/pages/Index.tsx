@@ -180,7 +180,9 @@ const Index = () => {
   // Language detection and translation
   const [currentLanguage, setCurrentLanguage] = useState('es');
   
-  const t = translations[currentLanguage as keyof typeof translations] || translations.es;
+  const t = useMemo(() => {
+    return translations[currentLanguage as keyof typeof translations] || translations.es;
+  }, [currentLanguage]);
   
   useEffect(() => {
     // Detect browser language
@@ -210,7 +212,14 @@ const Index = () => {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as loaded for initial image
+  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as loaded for placeholder image
+  const [heroImageFromDB, setHeroImageFromDB] = useState<string | null>(null);
+  const [heroImageFromDBLoaded, setHeroImageFromDBLoaded] = useState(false);
+  
+  // Log initial state - only run once on mount
+  useEffect(() => {
+    console.log('🎯 Initial hero image setup - using placeholder:', heroBackgroundImage);
+  }, []); // Empty dependency array - only run once
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -220,21 +229,26 @@ const Index = () => {
     { id: 'naturaleza', name: t.nature, count: 0 }
   ]);
 
-  // Preload hero image when URL changes
+  // Preload hero image from DB when it changes
   useEffect(() => {
-    if (heroBackgroundImage) {
+    if (heroImageFromDB) {
       const img = new Image();
       img.onload = () => {
-        console.log('✅ Hero image loaded successfully:', heroBackgroundImage);
+        console.log('✅ Hero image from DB loaded successfully:', heroImageFromDB);
+        setHeroImageFromDBLoaded(true);
+        // Only switch to DB image when it's fully loaded
+        setHeroBackgroundImage(heroImageFromDB);
         setHeroImageLoaded(true);
       };
       img.onerror = () => {
-        console.error('❌ Hero image failed to load:', heroBackgroundImage);
-        setHeroImageLoaded(true); // Fallback if image fails
+        console.error('❌ Hero image from DB failed to load:', heroImageFromDB);
+        setHeroImageFromDBLoaded(false);
+        // Keep placeholder if DB image fails
+        setHeroImageLoaded(true);
       };
-      img.src = heroBackgroundImage;
+      img.src = heroImageFromDB;
     }
-  }, [heroBackgroundImage]);
+  }, [heroImageFromDB]);
 
   // Carga ultra-rápida de datos
   useEffect(() => {
@@ -306,9 +320,12 @@ const Index = () => {
 
             // Configurar imagen de fondo del hero
             const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-            if (bgSetting && bgSetting.setting_value !== heroBackgroundImage) {
-              setHeroImageLoaded(false); // Reset loading state for new image
-              setHeroBackgroundImage(bgSetting.setting_value);
+            if (bgSetting && bgSetting.setting_value !== heroImageFromDB) {
+              console.log('🔄 Loading hero image from DB:', bgSetting.setting_value);
+              setHeroImageFromDB(bgSetting.setting_value);
+              setHeroImageFromDBLoaded(false);
+            } else if (bgSetting) {
+              console.log('ℹ️ Hero image from DB already loaded or same as current');
             }
 
             console.log('✅ Additional data loaded and cached');
@@ -335,20 +352,21 @@ const Index = () => {
         return acc;
       }, {} as Record<string, number>);
       
-      const updatedCategories = categories.map(cat => {
-        if (cat.id === 'todos') {
-          return { ...cat, count: tourCount };
-        } else {
-          return { ...cat, count: categoryCounts[cat.id] || 0 };
-        }
+      setCategories(prevCategories => {
+        const updatedCategories = prevCategories.map(cat => {
+          if (cat.id === 'todos') {
+            return { ...cat, count: tourCount };
+          } else {
+            return { ...cat, count: categoryCounts[cat.id] || 0 };
+          }
+        });
+        return updatedCategories;
       });
-      
-      setCategories(updatedCategories);
       
       // Precargar imágenes de los tours
       preloadTourImages(tours);
     }
-  }, [tours, categories]);
+  }, [tours]); // Removed categories from dependencies
 
   // Keyboard listener for dashboard access
   useEffect(() => {
@@ -544,8 +562,9 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
+        {/* Hero Background Image */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ${
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 ${
             heroImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -555,10 +574,19 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
         </div>
         
-        {/* Loading placeholder */}
+        {/* Loading placeholder - only show when no image is loaded */}
         {!heroImageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-emerald-600 animate-pulse">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
+          </div>
+        )}
+        
+        {/* Subtle loading indicator when DB image is loading in background */}
+        {heroImageFromDB && !heroImageFromDBLoaded && (
+          <div className="absolute top-4 right-4 z-20">
+            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </div>
           </div>
         )}
         
