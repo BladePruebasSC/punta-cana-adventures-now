@@ -85,7 +85,7 @@ const Dashboard = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSetting[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings' | 'nosotros'>('reservations');
   const [showAddPost, setShowAddPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [backgroundImage, setBackgroundImage] = useState('');
@@ -96,6 +96,16 @@ const Dashboard = () => {
     imageUrl: '',
     altText: ''
   });
+  const [nosotrosImages, setNosotrosImages] = useState<{
+    hero: string;
+    inicios: string;
+    experiencia: string;
+  }>({
+    hero: '',
+    inicios: '',
+    experiencia: ''
+  });
+  const [showNosotrosImageManager, setShowNosotrosImageManager] = useState(false);
   const { toast } = useToast();
 
   // Changed password to jontours2025
@@ -156,11 +166,22 @@ const Dashboard = () => {
         setTourImages(cachedImages);
         setSiteSettings(cachedSettings);
         
-        // Set current background image
-        const bgSetting = cachedSettings.find(s => s.setting_key === 'hero_background_image');
-        if (bgSetting) {
-          setBackgroundImage(bgSetting.setting_value);
-        }
+              // Set current background image
+      const bgSetting = cachedSettings.find(s => s.setting_key === 'hero_background_image');
+      if (bgSetting) {
+        setBackgroundImage(bgSetting.setting_value);
+      }
+
+      // Set current nosotros images
+      const nosotrosHeroSetting = cachedSettings.find(s => s.setting_key === 'nosotros_hero_image');
+      const nosotrosIniciosSetting = cachedSettings.find(s => s.setting_key === 'nosotros_inicios_image');
+      const nosotrosExperienciaSetting = cachedSettings.find(s => s.setting_key === 'nosotros_experiencia_image');
+      
+      setNosotrosImages({
+        hero: nosotrosHeroSetting?.setting_value || '',
+        inicios: nosotrosIniciosSetting?.setting_value || '',
+        experiencia: nosotrosExperienciaSetting?.setting_value || ''
+      });
         
         setLoading(false);
         return;
@@ -245,6 +266,17 @@ const Dashboard = () => {
           if (bgSetting) {
             setBackgroundImage(bgSetting.setting_value);
           }
+
+          // Set current nosotros images
+          const nosotrosHeroSetting = settingsData?.find(s => s.setting_key === 'nosotros_hero_image');
+          const nosotrosIniciosSetting = settingsData?.find(s => s.setting_key === 'nosotros_inicios_image');
+          const nosotrosExperienciaSetting = settingsData?.find(s => s.setting_key === 'nosotros_experiencia_image');
+          
+          setNosotrosImages({
+            hero: nosotrosHeroSetting?.setting_value || '',
+            inicios: nosotrosIniciosSetting?.setting_value || '',
+            experiencia: nosotrosExperienciaSetting?.setting_value || ''
+          });
 
           console.log('✅ Additional data loaded and cached');
         } catch (error) {
@@ -341,6 +373,11 @@ const Dashboard = () => {
   const handleBackgroundImageChange = (imageUrl: string) => {
     setBackgroundImage(imageUrl);
     updateSiteSetting('hero_background_image', imageUrl);
+  };
+
+  const handleNosotrosImageChange = (imageType: 'hero' | 'inicios' | 'experiencia', imageUrl: string) => {
+    setNosotrosImages(prev => ({ ...prev, [imageType]: imageUrl }));
+    updateSiteSetting(`nosotros_${imageType}_image`, imageUrl);
   };
 
   const updateReservationStatus = async (id: string, status: string) => {
@@ -1022,6 +1059,14 @@ Jon Tours and Adventure
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Configuración
+              </Button>
+              <Button
+                variant={activeTab === 'nosotros' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('nosotros')}
+                className="text-sm"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Página Nosotros
               </Button>
               <Button
                 variant="outline"
@@ -1838,6 +1883,141 @@ Jon Tours and Adventure
                 <div className="text-center py-8 text-gray-500">
                   <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Más opciones de configuración estarán disponibles pronto</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'nosotros' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5" />
+                  Gestión de Imágenes - Página Nosotros
+                </CardTitle>
+                <CardDescription>
+                  Gestiona las imágenes de la página "Nosotros" de tu sitio web
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Imagen Hero */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Hero</CardTitle>
+                  <CardDescription>
+                    Imagen principal de la sección hero de la página Nosotros
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.hero}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('hero', imageUrl)}
+                    label="Imagen Hero"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.hero && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.hero}
+                          alt="Vista previa Hero"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Imagen Inicios */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Inicios</CardTitle>
+                  <CardDescription>
+                    Imagen de la sección "Nuestros Inicios"
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.inicios}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('inicios', imageUrl)}
+                    label="Imagen Inicios"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.inicios && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.inicios}
+                          alt="Vista previa Inicios"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Imagen Experiencia */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Experiencia</CardTitle>
+                  <CardDescription>
+                    Imagen de la sección "Nuestra Experiencia"
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.experiencia}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('experiencia', imageUrl)}
+                    label="Imagen Experiencia"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.experiencia && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.experiencia}
+                          alt="Vista previa Experiencia"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Información de la Página Nosotros</CardTitle>
+                <CardDescription>
+                  Las imágenes se actualizarán automáticamente en la página "Nosotros"
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Consejos para las imágenes:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• <strong>Imagen Hero:</strong> Usa una imagen panorámica de Punta Cana (1920x1080px)</li>
+                    <li>• <strong>Imagen Inicios:</strong> Imagen que represente el inicio de la empresa</li>
+                    <li>• <strong>Imagen Experiencia:</strong> Imagen que muestre la experiencia turística</li>
+                    <li>• Formatos recomendados: JPG, PNG, WebP</li>
+                    <li>• Tamaño máximo: 10MB por imagen</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
