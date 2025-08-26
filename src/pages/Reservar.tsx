@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Users, Clock, Star, ArrowLeft } from 'lucide-react';
+import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,7 @@ const Reservar = () => {
   const [tourImages, setTourImages] = useState<TourImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -201,10 +202,10 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información del tour...</p>
+          <p className="text-gray-600 text-sm sm:text-base">Cargando información del tour...</p>
         </div>
       </div>
     );
@@ -212,11 +213,11 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
 
   if (!tour) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>Tour no encontrado</CardTitle>
-            <CardDescription>El tour que buscas no existe o ha sido eliminado.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Tour no encontrado</CardTitle>
+            <CardDescription className="text-sm sm:text-base">El tour que buscas no existe o ha sido eliminado.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/')} className="w-full">
@@ -230,33 +231,88 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 reservar-page">
-      <header className="bg-white/95 backdrop-blur-sm shadow-lg">
+      {/* Header Móvil Optimizado */}
+      <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
+          <div className="flex items-center justify-between py-3 sm:py-4">
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/')}
+                className="p-2 sm:p-2"
+                size="sm"
+              >
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline ml-2">Volver</span>
+              </Button>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
+                  <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                  Jon Tours
+                </h1>
+              </div>
+            </div>
+            
+            {/* Menú móvil */}
             <Button
               variant="ghost"
-              onClick={() => navigate('/')}
-              className="mr-4"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </Button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                Jon Tours and Adventure
-              </h1>
-            </div>
           </div>
+          
+          {/* Menú desplegable móvil */}
+          {isMobileMenuOpen && (
+            <div className="lg:hidden border-t border-gray-200 py-3 space-y-2">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigate('/');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full justify-start"
+              >
+                Inicio
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigate('/nosotros');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full justify-start"
+              >
+                Nosotros
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigate('/contacto');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full justify-start"
+              >
+                Contacto
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {/* Información del Tour - Optimizado para móvil */}
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <Card className="overflow-hidden">
               <div className="relative">
                 {tourImages.length > 0 ? (
                   <Carousel className="w-full">
@@ -267,7 +323,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                             <RobustImage 
                               src={image.image_url} 
                               alt={image.alt_text || tour.title}
-                              className="w-full h-96 object-contain rounded-t-lg bg-gray-100"
+                              className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover bg-gray-100"
                               onError={(errorUrl) => {
                                 console.error('Error loading tour image:', errorUrl);
                               }}
@@ -278,8 +334,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     </CarouselContent>
                     {tourImages.length > 1 && (
                       <>
-                        <CarouselPrevious className="left-2" />
-                        <CarouselNext className="right-2" />
+                        <CarouselPrevious className="left-2 h-8 w-8 sm:h-10 sm:w-10" />
+                        <CarouselNext className="right-2 h-8 w-8 sm:h-10 sm:w-10" />
                       </>
                     )}
                   </Carousel>
@@ -288,7 +344,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     <RobustImage 
                       src={tour.image_url} 
                       alt={tour.title}
-                      className="w-full h-96 object-contain rounded-t-lg bg-gray-100"
+                      className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover bg-gray-100"
                       onError={(errorUrl) => {
                         console.error('Error loading tour image:', errorUrl);
                       }}
@@ -296,47 +352,53 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                 )}
                 
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-lg px-3 py-1">
+                {/* Badges optimizados para móvil */}
+                <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
+                  <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm sm:text-lg px-2 sm:px-3 py-1">
                     ${tour.price}
                   </Badge>
                 </div>
-                <div className="absolute top-4 left-4">
-                  <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="font-medium">{tour.rating}</span>
+                <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+                  <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 sm:px-3 py-1">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 fill-current" />
+                    <span className="font-medium text-sm sm:text-base">{tour.rating}</span>
                   </div>
                 </div>
               </div>
               
-              <CardHeader>
-                <CardTitle className="text-2xl">{tour.title}</CardTitle>
-                <CardDescription className="text-base">{tour.description}</CardDescription>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl lg:text-2xl leading-tight">{tour.title}</CardTitle>
+                <CardDescription className="text-sm sm:text-base text-black font-medium leading-relaxed mt-2">
+                  {tour.description}
+                </CardDescription>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-5 h-5" />
+              <CardContent className="p-4 sm:p-6 space-y-4">
+                {/* Información del tour optimizada */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 text-black font-medium text-sm sm:text-base">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                     <span>{tour.duration}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="w-5 h-5" />
+                  <div className="flex items-center gap-2 text-black font-medium text-sm sm:text-base">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                     <span>{tour.group_size}</span>
                   </div>
                 </div>
                 
+                {/* Highlights optimizados */}
                 <div>
-                  <h4 className="font-semibold mb-2">Lo que incluye:</h4>
+                  <h4 className="font-semibold mb-2 text-black text-sm sm:text-base">Lo que incluye:</h4>
                   <div className="flex flex-wrap gap-2">
                     {tour.highlights.map((highlight, index) => (
-                      <Badge key={index} variant="secondary">
+                      <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
                         {highlight}
                       </Badge>
                     ))}
                   </div>
                 </div>
 
+                {/* Botón WhatsApp optimizado */}
                 <div className="flex gap-2 pt-2">
                   <Button 
                     onClick={() => sendWhatsAppMessage({
@@ -347,15 +409,16 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       highlights: tour.highlights
                     })}
                     variant="outline"
-                    className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700"
+                    className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 text-sm sm:text-base flex-1 sm:flex-none"
                   >
                     <WhatsAppIcon className="w-4 h-4 mr-2" />
-                    Contáctame por WhatsApp
+                    <span className="hidden sm:inline">Contáctame por WhatsApp</span>
+                    <span className="sm:hidden">WhatsApp</span>
                   </Button>
                 </div>
 
                 {tourImages.length > 1 && (
-                  <div className="text-sm text-gray-600 text-center">
+                  <div className="text-xs sm:text-sm text-black text-center font-medium">
                     📸 {tourImages.length} fotos disponibles - Usa las flechas para ver más
                   </div>
                 )}
@@ -363,23 +426,25 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
             </Card>
           </div>
 
+          {/* Formulario de Reserva - Optimizado para móvil */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
+            <Card className="sticky top-20 lg:top-24">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-black text-lg sm:text-xl">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                   Reservar este Tour
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-black font-medium text-sm sm:text-base">
                   Completa el formulario para reservar tu aventura
                 </CardDescription>
               </CardHeader>
               
-              <CardContent>
+              <CardContent className="p-4 sm:p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Campos del formulario optimizados */}
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nombre Completo *</Label>
+                      <Label htmlFor="name" className="text-black font-semibold text-sm sm:text-base">Nombre Completo *</Label>
                       <Input
                         id="name"
                         name="name"
@@ -387,11 +452,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="Tu nombre completo"
+                        className="text-sm sm:text-base"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email" className="text-black font-semibold text-sm sm:text-base">Email *</Label>
                       <Input
                         id="email"
                         name="email"
@@ -400,13 +466,14 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="tu@email.com"
+                        className="text-sm sm:text-base"
                       />
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono *</Label>
+                      <Label htmlFor="phone" className="text-black font-semibold text-sm sm:text-base">Teléfono *</Label>
                       <Input
                         id="phone"
                         name="phone"
@@ -415,11 +482,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="+1 (809) 840-8257"
+                        className="text-sm sm:text-base"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="guests">Número de Huéspedes *</Label>
+                      <Label htmlFor="guests" className="text-black font-semibold text-sm sm:text-base">Huéspedes *</Label>
                       <Input
                         id="guests"
                         name="guests"
@@ -429,12 +497,13 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         value={formData.guests}
                         onChange={handleInputChange}
                         required
+                        className="text-sm sm:text-base"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date">Fecha Preferida *</Label>
+                    <Label htmlFor="date" className="text-black font-semibold text-sm sm:text-base">Fecha Preferida *</Label>
                     <Input
                       id="date"
                       name="date"
@@ -443,11 +512,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       onChange={handleInputChange}
                       required
                       min={new Date().toISOString().split('T')[0]}
+                      className="text-sm sm:text-base"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="special_requests">Solicitudes Especiales</Label>
+                    <Label htmlFor="special_requests" className="text-black font-semibold text-sm sm:text-base">Solicitudes Especiales</Label>
                     <Textarea
                       id="special_requests"
                       name="special_requests"
@@ -455,15 +525,17 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       onChange={handleInputChange}
                       placeholder="Alguna solicitud especial, restricciones alimentarias, etc."
                       rows={3}
+                      className="text-sm sm:text-base"
                     />
                   </div>
                   
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-900 mb-2">Resumen de la Reserva</h4>
-                    <div className="space-y-1 text-sm text-blue-800">
+                  {/* Resumen optimizado */}
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Resumen de la Reserva</h4>
+                    <div className="space-y-1 text-xs sm:text-sm text-blue-800">
                       <div className="flex justify-between">
                         <span>Tour:</span>
-                        <span>{tour.title}</span>
+                        <span className="text-right max-w-[60%]">{tour.title}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Precio por persona:</span>
@@ -482,13 +554,13 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base py-3"
                     disabled={submitting}
                   >
                     {submitting ? 'Procesando...' : 'Confirmar Reserva'}
                   </Button>
                   
-                  <p className="text-sm text-gray-600 text-center">
+                  <p className="text-xs sm:text-sm text-black text-center font-medium">
                     * Esta es una pre-reserva. Te contactaremos para confirmar disponibilidad y procesar el pago.
                   </p>
                 </form>

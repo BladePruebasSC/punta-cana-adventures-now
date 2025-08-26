@@ -1,40 +1,29 @@
-// Sistema de precarga de imágenes para mejorar el rendimiento
+// Sistema de precarga de imágenes ultra-simplificado para velocidad máxima
 
 class ImagePreloader {
   private preloadedImages = new Set<string>();
-  private preloadQueue: string[] = [];
-  private isProcessing = false;
 
   // Precargar una imagen
-  preloadImage(src: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.preloadedImages.has(src)) {
-        resolve();
-        return;
-      }
+  preloadImage(src: string): void {
+    if (this.preloadedImages.has(src)) {
+      return;
+    }
 
-      const img = new Image();
-      
-      img.onload = () => {
-        this.preloadedImages.add(src);
-        resolve();
-      };
-      
-      img.onerror = () => {
-        reject(new Error(`Failed to preload image: ${src}`));
-      };
-      
-      img.src = src;
-    });
+    const img = new Image();
+    img.onload = () => {
+      this.preloadedImages.add(src);
+    };
+    img.onerror = () => {
+      // Silenciar errores para no ralentizar
+    };
+    img.src = src;
   }
 
-  // Precargar múltiples imágenes en paralelo
-  async preloadImages(urls: string[]): Promise<void> {
-    const promises = urls
+  // Precargar múltiples imágenes
+  preloadImages(urls: string[]): void {
+    urls
       .filter(url => !this.preloadedImages.has(url))
-      .map(url => this.preloadImage(url));
-    
-    await Promise.allSettled(promises);
+      .forEach(url => this.preloadImage(url));
   }
 
   // Verificar si una imagen ya está precargada
@@ -58,28 +47,14 @@ class ImagePreloader {
 
 export const imagePreloader = new ImagePreloader();
 
-// Función para precargar imágenes de tours
-export const preloadTourImages = async (tours: any[], tourImages: Record<string, any[]>) => {
-  const imageUrls: string[] = [];
+// Función ultra-simplificada para precargar imágenes
+export const preloadTourImages = (tours: any[]) => {
+  // Solo precargar las primeras 3 imágenes principales
+  const imageUrls = tours
+    .slice(0, 3)
+    .map(tour => tour.image_url)
+    .filter(Boolean);
   
-  // Agregar imágenes principales de tours
-  tours.forEach(tour => {
-    if (tour.image_url) {
-      imageUrls.push(tour.image_url);
-    }
-  });
-  
-  // Agregar imágenes adicionales de tours
-  Object.values(tourImages).forEach(images => {
-    images.forEach(image => {
-      if (image.image_url) {
-        imageUrls.push(image.image_url);
-      }
-    });
-  });
-  
-  // Precargar imágenes en segundo plano
-  imagePreloader.preloadImages(imageUrls).catch(error => {
-    console.warn('Some images failed to preload:', error);
-  });
+  // Precarga inmediata sin esperar
+  imagePreloader.preloadImages(imageUrls);
 };

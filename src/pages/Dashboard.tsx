@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { toursCache, tourImagesCache, siteSettingsCache, reservationsCache, messagesCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -84,7 +85,7 @@ const Dashboard = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSetting[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'messages' | 'posts' | 'settings' | 'nosotros'>('reservations');
   const [showAddPost, setShowAddPost] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [backgroundImage, setBackgroundImage] = useState('');
@@ -95,6 +96,16 @@ const Dashboard = () => {
     imageUrl: '',
     altText: ''
   });
+  const [nosotrosImages, setNosotrosImages] = useState<{
+    hero: string;
+    inicios: string;
+    experiencia: string;
+  }>({
+    hero: '',
+    inicios: '',
+    experiencia: ''
+  });
+  const [showNosotrosImageManager, setShowNosotrosImageManager] = useState(false);
   const { toast } = useToast();
 
   // Changed password to jontours2025
@@ -137,81 +148,149 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch reservations with tour details
-      const { data: reservationsData, error: reservationsError } = await supabase
-        .from('reservations')
-        .select(`
-          *,
-          posts (
-            title,
-            price
-          )
-        `)
-        .order('created_at', { ascending: false });
+      setLoading(true);
+      console.log('📡 Loading dashboard data...');
 
-      if (reservationsError) throw reservationsError;
-      setReservations(reservationsData || []);
+      // Verificar caché primero
+      const cachedReservations = reservationsCache.get<Reservation[]>(CACHE_KEYS.RESERVATIONS);
+      const cachedMessages = messagesCache.get<ContactMessage[]>(CACHE_KEYS.MESSAGES);
+      const cachedPosts = toursCache.get<Post[]>(CACHE_KEYS.TOURS);
+      const cachedImages = tourImagesCache.get<Record<string, TourImage[]>>(CACHE_KEYS.TOUR_IMAGES);
+      const cachedSettings = siteSettingsCache.get<SiteSetting[]>(CACHE_KEYS.SITE_SETTINGS);
 
-      // Fetch contact messages
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('contact_messages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (messagesError) throw messagesError;
-      setContactMessages(messagesData || []);
-
-      // Fetch posts
-      const { data: postsData, error: postsError } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (postsError) throw postsError;
-      setPosts(postsData || []);
-
-      // Fetch tour images
-      const { data: imagesData, error: imagesError } = await supabase
-        .from('tour_images')
-        .select('*')
-        .order('order_index', { ascending: true });
-
-      if (imagesError) throw imagesError;
-
-      // Group images by tour_id
-      const imagesByTour: Record<string, TourImage[]> = {};
-      (imagesData || []).forEach(image => {
-        if (!imagesByTour[image.tour_id]) {
-          imagesByTour[image.tour_id] = [];
-        }
-        imagesByTour[image.tour_id].push(image);
-      });
-      
-      setTourImages(imagesByTour);
-
-      // Fetch site settings
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('site_settings')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (settingsError) throw settingsError;
-      setSiteSettings(settingsData || []);
-      
-      // Set current background image
-      const bgSetting = settingsData?.find(s => s.setting_key === 'hero_background_image');
+      if (cachedReservations && cachedMessages && cachedPosts && cachedImages && cachedSettings) {
+        console.log('🚀 Using cached dashboard data - Instant load!');
+        setReservations(cachedReservations);
+        setContactMessages(cachedMessages);
+        setPosts(cachedPosts);
+        setTourImages(cachedImages);
+        setSiteSettings(cachedSettings);
+        
+              // Set current background image
+      const bgSetting = cachedSettings.find(s => s.setting_key === 'hero_background_image');
       if (bgSetting) {
         setBackgroundImage(bgSetting.setting_value);
       }
 
+      // Set current nosotros images
+      const nosotrosHeroSetting = cachedSettings.find(s => s.setting_key === 'nosotros_hero_image');
+      const nosotrosIniciosSetting = cachedSettings.find(s => s.setting_key === 'nosotros_inicios_image');
+      const nosotrosExperienciaSetting = cachedSettings.find(s => s.setting_key === 'nosotros_experiencia_image');
+      
+      setNosotrosImages({
+        hero: nosotrosHeroSetting?.setting_value || '',
+        inicios: nosotrosIniciosSetting?.setting_value || '',
+        experiencia: nosotrosExperienciaSetting?.setting_value || ''
+      });
+        
+        setLoading(false);
+        return;
+      }
+
+      // Cargar datos esenciales primero (reservations y messages)
+      console.log('📡 Loading essential data (reservations, messages)...');
+      
+      const [reservationsResponse, messagesResponse] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select(`
+            *,
+            posts (
+              title,
+              price
+            )
+          `)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('contact_messages')
+          .select('*')
+          .order('created_at', { ascending: false })
+      ]);
+
+      const { data: reservationsData, error: reservationsError } = reservationsResponse;
+      const { data: messagesData, error: messagesError } = messagesResponse;
+
+      if (reservationsError) throw reservationsError;
+      if (messagesError) throw messagesError;
+
+      // Mostrar datos esenciales inmediatamente
+      setReservations(reservationsData || []);
+      setContactMessages(messagesData || []);
+      console.log('✅ Essential data loaded, showing dashboard...');
+      setLoading(false);
+
+      // Guardar en caché inmediatamente
+      reservationsCache.set(CACHE_KEYS.RESERVATIONS, reservationsData || [], CACHE_TTL.RESERVATIONS);
+      messagesCache.set(CACHE_KEYS.MESSAGES, messagesData || [], CACHE_TTL.MESSAGES);
+
+      // Cargar datos adicionales en segundo plano
+      setTimeout(async () => {
+        try {
+          console.log('📡 Loading additional data (posts, images, settings)...');
+          
+          const [postsResponse, imagesResponse, settingsResponse] = await Promise.all([
+            supabase.from('posts').select('*').order('created_at', { ascending: false }),
+            supabase.from('tour_images').select('*').order('order_index', { ascending: true }),
+            supabase.from('site_settings').select('*').order('created_at', { ascending: false })
+          ]);
+
+          const { data: postsData, error: postsError } = postsResponse;
+          const { data: imagesData, error: imagesError } = imagesResponse;
+          const { data: settingsData, error: settingsError } = settingsResponse;
+
+          if (postsError) throw postsError;
+          if (imagesError) throw imagesError;
+          if (settingsError) throw settingsError;
+
+          // Group images by tour_id
+          const imagesByTour: Record<string, TourImage[]> = {};
+          (imagesData || []).forEach(image => {
+            if (!imagesByTour[image.tour_id]) {
+              imagesByTour[image.tour_id] = [];
+            }
+            imagesByTour[image.tour_id].push(image);
+          });
+
+          // Actualizar estado
+          setPosts(postsData || []);
+          setTourImages(imagesByTour);
+          setSiteSettings(settingsData || []);
+
+          // Guardar en caché
+          toursCache.set(CACHE_KEYS.TOURS, postsData || [], CACHE_TTL.TOURS);
+          tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+          siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], CACHE_TTL.SITE_SETTINGS);
+
+          // Set current background image
+          const bgSetting = settingsData?.find(s => s.setting_key === 'hero_background_image');
+          if (bgSetting) {
+            setBackgroundImage(bgSetting.setting_value);
+          }
+
+          // Set current nosotros images
+          const nosotrosHeroSetting = settingsData?.find(s => s.setting_key === 'nosotros_hero_image');
+          const nosotrosIniciosSetting = settingsData?.find(s => s.setting_key === 'nosotros_inicios_image');
+          const nosotrosExperienciaSetting = settingsData?.find(s => s.setting_key === 'nosotros_experiencia_image');
+          
+          setNosotrosImages({
+            hero: nosotrosHeroSetting?.setting_value || '',
+            inicios: nosotrosIniciosSetting?.setting_value || '',
+            experiencia: nosotrosExperienciaSetting?.setting_value || ''
+          });
+
+          console.log('✅ Additional data loaded and cached');
+        } catch (error) {
+          console.error('Error loading additional data:', error);
+        }
+      }, 100);
+
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching essential data:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los datos",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -294,6 +373,11 @@ const Dashboard = () => {
   const handleBackgroundImageChange = (imageUrl: string) => {
     setBackgroundImage(imageUrl);
     updateSiteSetting('hero_background_image', imageUrl);
+  };
+
+  const handleNosotrosImageChange = (imageType: 'hero' | 'inicios' | 'experiencia', imageUrl: string) => {
+    setNosotrosImages(prev => ({ ...prev, [imageType]: imageUrl }));
+    updateSiteSetting(`nosotros_${imageType}_image`, imageUrl);
   };
 
   const updateReservationStatus = async (id: string, status: string) => {
@@ -977,6 +1061,14 @@ Jon Tours and Adventure
                 Configuración
               </Button>
               <Button
+                variant={activeTab === 'nosotros' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('nosotros')}
+                className="text-sm"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Página Nosotros
+              </Button>
+              <Button
                 variant="outline"
                 onClick={() => navigate('/')}
                 className="text-sm flex items-center gap-2"
@@ -1055,7 +1147,7 @@ Jon Tours and Adventure
                         <CardTitle className="text-lg sm:text-xl">
                           {reservation.posts?.title || 'Tour no disponible'}
                         </CardTitle>
-                        <CardDescription className="text-sm">
+                        <CardDescription className="text-sm text-black font-bold">
                           Reserva de {reservation.name} • {new Date(reservation.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
@@ -1072,19 +1164,19 @@ Jon Tours and Adventure
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-blue-600" />
-                        <span>{reservation.date}</span>
+                        <span className="text-black font-semibold">{reservation.date}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-green-600" />
-                        <span>{reservation.guests} huéspedes</span>
+                        <span className="text-black font-semibold">{reservation.guests} huéspedes</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-purple-600" />
-                        <span className="truncate">{reservation.email}</span>
+                        <span className="truncate text-black font-semibold">{reservation.email}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-orange-600" />
-                        <span>{reservation.phone}</span>
+                        <span className="text-black font-semibold">{reservation.phone}</span>
                       </div>
                     </div>
                     
@@ -1093,8 +1185,8 @@ Jon Tours and Adventure
                         <div className="flex items-start gap-2">
                           <MessageSquare className="w-4 h-4 text-gray-600 mt-0.5" />
                           <div>
-                            <div className="font-medium text-sm text-gray-700">Solicitudes especiales:</div>
-                            <div className="text-sm text-gray-600 mt-1">{reservation.special_requests}</div>
+                            <div className="font-bold text-sm text-black">Solicitudes especiales:</div>
+                            <div className="text-sm text-black font-semibold mt-1">{reservation.special_requests}</div>
                           </div>
                         </div>
                       </div>
@@ -1791,6 +1883,141 @@ Jon Tours and Adventure
                 <div className="text-center py-8 text-gray-500">
                   <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Más opciones de configuración estarán disponibles pronto</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'nosotros' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5" />
+                  Gestión de Imágenes - Página Nosotros
+                </CardTitle>
+                <CardDescription>
+                  Gestiona las imágenes de la página "Nosotros" de tu sitio web
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Imagen Hero */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Hero</CardTitle>
+                  <CardDescription>
+                    Imagen principal de la sección hero de la página Nosotros
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.hero}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('hero', imageUrl)}
+                    label="Imagen Hero"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.hero && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.hero}
+                          alt="Vista previa Hero"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Imagen Inicios */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Inicios</CardTitle>
+                  <CardDescription>
+                    Imagen de la sección "Nuestros Inicios"
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.inicios}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('inicios', imageUrl)}
+                    label="Imagen Inicios"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.inicios && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.inicios}
+                          alt="Vista previa Inicios"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Imagen Experiencia */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Imagen Experiencia</CardTitle>
+                  <CardDescription>
+                    Imagen de la sección "Nuestra Experiencia"
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ImageUpload
+                    currentImageUrl={nosotrosImages.experiencia}
+                    onImageChange={(imageUrl) => handleNosotrosImageChange('experiencia', imageUrl)}
+                    label="Imagen Experiencia"
+                    bucket="nosotros-images"
+                    maxSizeMB={10}
+                  />
+                  
+                  {nosotrosImages.experiencia && (
+                    <div className="mt-4">
+                      <Label className="text-sm font-medium">Vista previa:</Label>
+                      <div className="mt-2 relative h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={nosotrosImages.experiencia}
+                          alt="Vista previa Experiencia"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Información de la Página Nosotros</CardTitle>
+                <CardDescription>
+                  Las imágenes se actualizarán automáticamente en la página "Nosotros"
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Consejos para las imágenes:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• <strong>Imagen Hero:</strong> Usa una imagen panorámica de Punta Cana (1920x1080px)</li>
+                    <li>• <strong>Imagen Inicios:</strong> Imagen que represente el inicio de la empresa</li>
+                    <li>• <strong>Imagen Experiencia:</strong> Imagen que muestre la experiencia turística</li>
+                    <li>• Formatos recomendados: JPG, PNG, WebP</li>
+                    <li>• Tamaño máximo: 10MB por imagen</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

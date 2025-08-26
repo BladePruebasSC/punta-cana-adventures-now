@@ -1,39 +1,25 @@
-// Utilidades para manejo de imágenes
+// Utilidades para optimización de imágenes
 
 export const isValidImageUrl = (url: string): boolean => {
-  if (!url) return false;
+  if (!url || typeof url !== 'string') return false;
   
   try {
     const urlObj = new URL(url);
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    return ['http:', 'https:'].includes(urlObj.protocol);
   } catch {
     return false;
   }
 };
 
 export const testImageUrl = async (url: string): Promise<boolean> => {
-  if (!isValidImageUrl(url)) return false;
-  
+  if (!isValidImageUrl(url)) {
+    return false;
+  }
+
   try {
-    const response = await fetch(url, { 
-      method: 'HEAD',
-      mode: 'cors'
-    });
-    
-    if (!response.ok) {
-      console.error(`Image URL test failed for ${url}:`, response.status, response.statusText);
-      return false;
-    }
-    
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.startsWith('image/')) {
-      console.error(`URL does not point to an image: ${url}, content-type: ${contentType}`);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error(`Error testing image URL ${url}:`, error);
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok && response.headers.get('content-type')?.startsWith('image/');
+  } catch {
     return false;
   }
 };
@@ -52,23 +38,14 @@ export const getImageFallback = (originalUrl: string): string => {
 };
 
 export const logImageLoadStatus = (url: string, success: boolean) => {
-  if (success) {
-    console.log(`✅ Image loaded successfully: ${url}`);
-  } else {
-    console.error(`❌ Image failed to load: ${url}`);
-  }
+  console.log(`Image ${success ? 'loaded' : 'failed'}: ${url}`);
 };
 
-// Función para verificar si una imagen está siendo bloqueada por CORS
 export const checkImageAccessibility = async (url: string): Promise<boolean> => {
   try {
-    const response = await fetch(url, { 
-      method: 'HEAD',
-      mode: 'no-cors' // Esto evita errores de CORS
-    });
-    return true;
-  } catch (error) {
-    console.error('Image accessibility check failed:', error);
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch {
     return false;
   }
 };
@@ -80,123 +57,113 @@ export const createProxyUrl = (originalUrl: string): string => {
 };
 
 // Función para obtener URLs de fallback de imágenes genéricas
-export const getGenericFallbackImages = (): string[] => {
+export const getGenericFallbackImages = () => {
   return [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80'
   ];
 };
 
-// Función para verificar si una URL de Unsplash está siendo bloqueada
-export const checkUnsplashUrl = (url: string): string => {
+// Función para optimizar URLs de Unsplash
+export const optimizeUnsplashUrl = (url: string, width: number = 800, quality: number = 80): string => {
   if (!url.includes('unsplash.com')) return url;
   
   try {
     const urlObj = new URL(url);
-    
-    // Asegurar que tenga los parámetros correctos para evitar problemas de CORS
-    urlObj.searchParams.set('auto', 'format');
+    urlObj.searchParams.set('w', width.toString());
+    urlObj.searchParams.set('q', quality.toString());
     urlObj.searchParams.set('fit', 'crop');
-    urlObj.searchParams.set('w', '800');
-    urlObj.searchParams.set('q', '80');
-    
+    urlObj.searchParams.set('auto', 'format');
     return urlObj.toString();
-  } catch (error) {
-    console.error('Error processing Unsplash URL:', error);
+  } catch {
     return url;
   }
 };
 
-// Función para obtener una URL de imagen alternativa si la original falla
-export const getAlternativeImageUrl = (originalUrl: string): string => {
-  if (originalUrl.includes('unsplash.com')) {
-    try {
-      // Intentar con diferentes parámetros
-      const url = new URL(originalUrl);
-      url.searchParams.set('auto', 'format');
-      url.searchParams.set('fit', 'crop');
-      url.searchParams.set('w', '600');
-      url.searchParams.set('q', '70');
-      return url.toString();
-    } catch (error) {
-      console.error('Error processing Unsplash URL:', error);
-      return originalUrl;
-    }
-  }
+// Función para obtener el tamaño de imagen apropiado según el dispositivo
+export const getResponsiveImageSize = (): { width: number; quality: number } => {
+  const width = window.innerWidth;
   
-  // Si no es Unsplash, usar una imagen de placeholder
-  return '/placeholder.svg';
+  if (width < 640) return { width: 400, quality: 70 }; // Mobile
+  if (width < 1024) return { width: 600, quality: 75 }; // Tablet
+  return { width: 800, quality: 80 }; // Desktop
 };
 
-// Función para obtener múltiples URLs alternativas
-export const getMultipleAlternativeUrls = (originalUrl: string): string[] => {
-  const alternatives: string[] = [];
-  
-  if (originalUrl.includes('unsplash.com')) {
-    try {
-      // Alternativa 1: Parámetros básicos
-      const basicUrl = new URL(originalUrl);
-      basicUrl.searchParams.set('w', '800');
-      basicUrl.searchParams.set('q', '80');
-      alternatives.push(basicUrl.toString());
-      
-      // Alternativa 2: Parámetros diferentes
-      const altUrl = new URL(originalUrl);
-      altUrl.searchParams.set('auto', 'format');
-      altUrl.searchParams.set('fit', 'crop');
-      altUrl.searchParams.set('w', '600');
-      altUrl.searchParams.set('q', '70');
-      alternatives.push(altUrl.toString());
-      
-      // Alternativa 3: Sin parámetros de procesamiento
-      const cleanUrl = new URL(originalUrl);
-      cleanUrl.searchParams.delete('auto');
-      cleanUrl.searchParams.delete('fit');
-      cleanUrl.searchParams.delete('w');
-      cleanUrl.searchParams.delete('q');
-      alternatives.push(cleanUrl.toString());
-      
-      // Alternativa 4: URL con parámetros mínimos
-      const minUrl = new URL(originalUrl);
-      minUrl.searchParams.set('w', '1200');
-      minUrl.searchParams.set('q', '90');
-      alternatives.push(minUrl.toString());
-      
-      // Alternativa 5: URL con parámetros de formato específico
-      const formatUrl = new URL(originalUrl);
-      formatUrl.searchParams.set('auto', 'format');
-      formatUrl.searchParams.set('fit', 'max');
-      formatUrl.searchParams.set('w', '1000');
-      formatUrl.searchParams.set('q', '85');
-      alternatives.push(formatUrl.toString());
-      
-    } catch (error) {
-      console.error('Error generating alternative URLs:', error);
+// Función para precargar imagen con timeout
+export const preloadImageWithTimeout = (src: string, timeout: number = 5000): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => {
+      resolve(false);
+    }, timeout);
+
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+
+    img.src = src;
+  });
+};
+
+// Función para comprimir imagen en el cliente (si es posible)
+export const compressImage = async (file: File, maxWidth: number = 800, quality: number = 0.8): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const compressedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now()
+          });
+          resolve(compressedFile);
+        } else {
+          resolve(file);
+        }
+      }, file.type, quality);
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Función para verificar si una imagen está en caché del navegador
+export const isImageCached = (src: string): boolean => {
+  const img = new Image();
+  img.src = src;
+  return img.complete;
+};
+
+// Función para obtener estadísticas de carga de imágenes
+export const getImageLoadStats = () => {
+  const images = document.querySelectorAll('img');
+  let loaded = 0;
+  let failed = 0;
+  let total = images.length;
+
+  images.forEach(img => {
+    if (img.complete && img.naturalHeight !== 0) {
+      loaded++;
+    } else if (img.complete) {
+      failed++;
     }
-  } else if (originalUrl.includes('images.unsplash.com')) {
-    // Para URLs directas de Unsplash
-    try {
-      const url = new URL(originalUrl);
-      
-      // Intentar con diferentes tamaños
-      const sizes = [800, 1000, 1200, 600];
-      const qualities = [80, 85, 90, 70];
-      
-      sizes.forEach(size => {
-        qualities.forEach(quality => {
-          const altUrl = new URL(originalUrl);
-          altUrl.searchParams.set('w', size.toString());
-          altUrl.searchParams.set('q', quality.toString());
-          alternatives.push(altUrl.toString());
-        });
-      });
-      
-    } catch (error) {
-      console.error('Error generating Unsplash alternative URLs:', error);
-    }
-  }
-  
-  return alternatives;
+  });
+
+  return { loaded, failed, total, successRate: total > 0 ? (loaded / total) * 100 : 0 };
 };

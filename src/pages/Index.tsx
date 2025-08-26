@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
-import { toursCache, tourImagesCache, siteSettingsCache, CACHE_KEYS } from '@/lib/cache';
+import { toursCache, tourImagesCache, siteSettingsCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import { preloadTourImages } from '@/lib/imagePreloader';
 import { useNavigate } from 'react-router-dom';
 import TourCard from '@/components/TourCard';
@@ -204,13 +204,13 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [tours, setTours] = useState<Tour[]>([]);
   const [tourImages, setTourImages] = useState<Record<string, TourImage[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [heroBackgroundImage, setHeroBackgroundImage] = useState('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
+  const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
     { id: 'aventura', name: t.adventure, count: 0 },
@@ -219,153 +219,103 @@ const Index = () => {
     { id: 'naturaleza', name: t.nature, count: 0 }
   ]);
 
+  // Carga ultra-rápida de datos
   useEffect(() => {
-    // Precargar la imagen de fondo por defecto inmediatamente
-    const preloadDefaultImage = new Image();
-    preloadDefaultImage.src = heroBackgroundImage;
-    
-    // Load site settings first (they're needed for the hero background)
-    const loadInitialData = async () => {
-      await fetchSiteSettings();
-      await fetchTours();
-    };
-    
-    loadInitialData();
-  }, []);
-
-  const fetchSiteSettings = async () => {
-    try {
-      // Check cache first
-      const cachedSettings = siteSettingsCache.get<SiteSetting[]>(CACHE_KEYS.SITE_SETTINGS);
-      
-      if (cachedSettings) {
-        console.log('🚀 Using cached site settings - Fast load!');
-              const bgSetting = cachedSettings.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-      if (bgSetting) {
-        // Precargar la imagen antes de establecerla
-        const img = new Image();
-        img.onload = () => {
-          setHeroBackgroundImage(bgSetting.setting_value);
-          setSettingsLoaded(true);
-        };
-        img.onerror = () => {
-          console.warn('Failed to load hero background image, keeping default');
-          setSettingsLoaded(true);
-        };
-        img.src = bgSetting.setting_value;
-      } else {
-        setSettingsLoaded(true);
-      }
-      return;
-      }
-
-      const { data: settingsData, error } = await supabase
-        .from('site_settings')
-        .select('*');
-
-      if (error) throw error;
-
-      // Cache the settings
-      siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], 30 * 60 * 1000); // 30 minutes
-      console.log('⚡ Site settings cached for faster future loads');
-
-      const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-      if (bgSetting) {
-        // Precargar la imagen antes de establecerla
-        const img = new Image();
-        img.onload = () => {
-          setHeroBackgroundImage(bgSetting.setting_value);
-          setSettingsLoaded(true);
-        };
-        img.onerror = () => {
-          console.warn('Failed to load hero background image, keeping default');
-          setSettingsLoaded(true);
-        };
-        img.src = bgSetting.setting_value;
-      } else {
-        setSettingsLoaded(true);
-      }
-    } catch (error) {
-      console.error('Error fetching site settings:', error);
-      // Keep default background image if there's an error
-      setSettingsLoaded(true);
-    }
-  };
-
-  const fetchTours = async () => {
-    try {
-      // Check cache first
-      const cachedTours = toursCache.get<Tour[]>(CACHE_KEYS.TOURS);
-      const cachedImages = tourImagesCache.get<Record<string, TourImage[]>>(CACHE_KEYS.TOUR_IMAGES);
-      
-      if (cachedTours && cachedImages) {
-        console.log('🚀 Using cached data - Fast load!');
-        setTours(cachedTours);
-        setTourImages(cachedImages);
+    const loadData = async () => {
+      try {
+        // Verificar caché primero - esto debería ser instantáneo
+        const cachedTours = toursCache.get<Tour[]>(CACHE_KEYS.TOURS);
+        const cachedImages = tourImagesCache.get<Record<string, TourImage[]>>(CACHE_KEYS.TOUR_IMAGES);
         
-        // Update category counts
-        const tourCount = cachedTours.length;
-        const categoryCounts = cachedTours.reduce((acc, tour) => {
-          acc[tour.category] = (acc[tour.category] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        const updatedCategories = categories.map(cat => {
-          if (cat.id === 'todos') {
-            return { ...cat, count: tourCount };
-          } else {
-            return { ...cat, count: categoryCounts[cat.id] || 0 };
-          }
-        });
-        
-        setCategories(updatedCategories);
-        setLoading(false);
-        return;
-      }
+        if (cachedTours && cachedImages) {
+          console.log('🚀 Using cached data - Instant load!');
+          setTours(cachedTours);
+          setTourImages(cachedImages);
+          setLoading(false);
+          return;
+        }
 
-      // Fetch tours and images in parallel for better performance
-      const [toursResponse, imagesResponse] = await Promise.all([
-        supabase
+        // Si no hay caché, cargar solo tours primero (las imágenes principales ya están en tour.image_url)
+        setLoading(true);
+        console.log('📡 Loading tours from database...');
+        
+        const { data: toursData, error: toursError } = await supabase
           .from('posts')
           .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('tour_images')
-          .select('*')
-          .order('order_index', { ascending: true })
-      ]);
+          .order('created_at', { ascending: false });
 
-      const { data: toursData, error: toursError } = toursResponse;
-      const { data: imagesData, error: imagesError } = imagesResponse;
+        if (toursError) throw toursError;
 
-      if (toursError) throw toursError;
-      if (imagesError) throw imagesError;
-      
-      // Cache the data
-      toursCache.set(CACHE_KEYS.TOURS, toursData || []);
-      
-      // Group images by tour_id more efficiently
-      const imagesByTour: Record<string, TourImage[]> = {};
-      (imagesData || []).forEach(image => {
-        if (!imagesByTour[image.tour_id]) {
-          imagesByTour[image.tour_id] = [];
-        }
-        imagesByTour[image.tour_id].push(image);
-      });
-      
-      tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour);
-      
-      console.log('⚡ Data cached for faster future loads');
-      
-      setTours(toursData || []);
-      setTourImages(imagesByTour);
-      
-      // Update category counts more efficiently
-      const tourCount = toursData?.length || 0;
-      const categoryCounts = toursData?.reduce((acc, tour) => {
+        // Mostrar tours inmediatamente (las imágenes principales están en tour.image_url)
+        setTours(toursData || []);
+        console.log('✅ Tours loaded, showing content immediately...');
+        console.log('📊 Tours loaded:', toursData?.length || 0);
+        console.log('📊 Sample tour image:', toursData?.[0]?.image_url);
+        setLoading(false);
+
+        // Guardar tours en caché inmediatamente
+        toursCache.set(CACHE_KEYS.TOURS, toursData || [], CACHE_TTL.TOURS);
+
+        // Cargar imágenes adicionales y configuraciones en segundo plano
+        setTimeout(async () => {
+          try {
+            console.log('📡 Loading additional images and settings in background...');
+            
+            const [imagesResponse, settingsResponse] = await Promise.all([
+              supabase.from('tour_images').select('*').order('order_index', { ascending: true }),
+              supabase.from('site_settings').select('*')
+            ]);
+
+            const { data: imagesData, error: imagesError } = imagesResponse;
+            const { data: settingsData, error: settingsError } = settingsResponse;
+
+            if (imagesError) throw imagesError;
+            if (settingsError) throw settingsError;
+
+            // Procesar imágenes adicionales por tour
+            const imagesByTour: Record<string, TourImage[]> = {};
+            (imagesData || []).forEach(image => {
+              if (!imagesByTour[image.tour_id]) {
+                imagesByTour[image.tour_id] = [];
+              }
+              imagesByTour[image.tour_id].push(image);
+            });
+
+            // Guardar en caché
+            tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+            siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], CACHE_TTL.SITE_SETTINGS);
+
+            setTourImages(imagesByTour);
+
+            // Configurar imagen de fondo del hero
+            const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
+            if (bgSetting) {
+              setHeroBackgroundImage(bgSetting.setting_value);
+            }
+
+            console.log('✅ Additional data loaded and cached');
+          } catch (error) {
+            console.error('Error loading additional data:', error);
+          }
+        }, 100);
+
+      } catch (error) {
+        console.error('Error loading tours:', error);
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Actualizar conteos de categorías cuando los tours cambien
+  useEffect(() => {
+    if (tours.length > 0) {
+      const tourCount = tours.length;
+      const categoryCounts = tours.reduce((acc, tour) => {
         acc[tour.category] = (acc[tour.category] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>) || {};
+      }, {} as Record<string, number>);
       
       const updatedCategories = categories.map(cat => {
         if (cat.id === 'todos') {
@@ -377,18 +327,35 @@ const Index = () => {
       
       setCategories(updatedCategories);
       
-      // Precargar imágenes en segundo plano para mejor rendimiento
-      if (toursData && imagesByTour) {
-        setTimeout(() => {
-          preloadTourImages(toursData, imagesByTour);
-        }, 100);
-      }
-    } catch (error) {
-      console.error('Error fetching tours:', error);
-    } finally {
-      setLoading(false);
+      // Precargar imágenes de los tours
+      preloadTourImages(tours);
     }
-  };
+  }, [tours, categories]);
+
+  // Keyboard listener for dashboard access
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      const newSequence = keySequence + event.key.toUpperCase();
+      setKeySequence(newSequence);
+      
+      // Check if the sequence ends with "CDERF"
+      if (newSequence.endsWith('CDERF')) {
+        navigate('/dashboard');
+        setKeySequence(''); // Reset sequence
+      }
+      
+      // Reset sequence if it gets too long or doesn't match
+      if (newSequence.length > 10) {
+        setKeySequence('');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [keySequence, navigate]);
 
   // Filter tours based on search term and selected category - optimized with useMemo
   const filteredTours = useMemo(() => {
@@ -474,13 +441,13 @@ const Index = () => {
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
-  if (loading || !settingsLoaded) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">
-            {!settingsLoaded ? 'Cargando configuración...' : 'Cargando tours...'}
+            Cargando tours...
           </p>
           <p className="text-gray-500 text-sm mt-2">Optimizando para mejor rendimiento...</p>
         </div>
