@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, ArrowLeft, Phone, Mail, Clock, MessageCircle, Send, MapPin as Location } from 'lucide-react';
+import { MapPin, ArrowLeft, Phone, Mail, Clock, MessageCircle, Send, MapPin as Location, Users, Award, Star, Globe, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -378,6 +379,157 @@ const Contacto = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Sobre Nosotros Section */}
+        <section className="mt-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Sobre Jon Tour & Adventure
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Más de 20 años creando experiencias inolvidables en Punta Cana
+            </p>
+          </div>
+
+          {/* Historia y Experiencia */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <Card className="bg-gradient-to-br from-blue-50 to-emerald-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-blue-600" />
+                  Nuestra Historia
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700">
+                  <strong>Jon Tour & Adventure</strong> nace en el 2021 como una empresa operadora 
+                  especializada en ventas de productos vacacionales online y servicios terrestres.
+                </p>
+                <p className="text-gray-700">
+                  Desde el 2002 venimos trabajando para diferentes marcas y empresas dentro de la 
+                  industria hotelera y turística en todo Punta Cana, adquiriendo una vasta experiencia.
+                </p>
+                <div className="bg-blue-100 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">Nuestra Misión</h4>
+                  <p className="text-blue-800 text-sm">
+                    Apostamos a la buena calidad, responsabilidad y por el buen servicio que cada 
+                    quien espera recibir al adquirir un paquete de servicios.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-emerald-50 to-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-emerald-600" />
+                  Lo Que Ofrecemos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Globe className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium">Tours & Excursiones únicas</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    <span className="font-medium">Transporte confiable y cómodo</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Heart className="w-5 h-5 text-red-600" />
+                    <span className="font-medium">Experiencias personalizadas</span>
+                  </div>
+                </div>
+                <div className="bg-emerald-100 p-4 rounded-lg">
+                  <h4 className="font-semibold text-emerald-900 mb-2">Nuestro Objetivo</h4>
+                  <p className="text-emerald-800 text-sm">
+                    Crear experiencias memorables en el corazón de cada visitante con productos 
+                    de alta calidad y servicio personalizado.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Gerente General */}
+          <Card className="max-w-2xl mx-auto mb-12">
+            <CardHeader className="text-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-center">
+                <Users className="w-10 h-10 text-white" />
+              </div>
+              <CardTitle className="text-xl">Jonathan E. Francois</CardTitle>
+              <CardDescription className="text-lg">Gerente General</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="flex items-center justify-center space-x-2">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span className="text-gray-700 break-all">Jonathanfrancoisg@gmail.com</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <Phone className="w-4 h-4 text-blue-600" />
+                <span className="text-gray-700">+1-(809)-840-8357</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Estadísticas */}
+          <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-xl p-8 mb-12">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">Nuestros Logros</h3>
+              <p className="text-blue-100">Números que reflejan nuestro compromiso con la excelencia</p>
+            </div>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-1">20+</div>
+                <div className="text-blue-100 text-sm">Años de Experiencia</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-1">1000+</div>
+                <div className="text-blue-100 text-sm">Clientes Satisfechos</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-1">15+</div>
+                <div className="text-blue-100 text-sm">Tours Únicos</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-1">5.0</div>
+                <div className="text-blue-100 text-sm">Rating Promedio</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 text-center">
+            <CardContent className="pt-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                ¿Listo para tu Aventura en Punta Cana?
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                Únete a miles de viajeros que han confiado en nosotros para crear 
+                experiencias inolvidables en el paraíso caribeño.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600"
+                  onClick={() => navigate('/')}
+                >
+                  Ver Tours Disponibles
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => window.open('https://wa.me/18098408257', '_blank')}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp Directo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </div>
   );
