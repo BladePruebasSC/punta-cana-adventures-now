@@ -22,7 +22,7 @@ interface SiteSetting {
 // Translation system
 const translations = {
   es: {
-    heroTitle: "EXPLORA TODA PUNTA CANA",
+    heroTitle: "EXPLORA TODO PUNTA CANA AHORA",
     heroSubtitle: "Transportación • Tours • Excursiones • Experiencias Inolvidables",
     searchPlaceholder: "Buscar tours, aventuras...",
     exploreButton: "Explorar Tours",
@@ -591,7 +591,7 @@ const Index = () => {
         )}
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
             {t.heroTitle}
           </h2>
           <p className="text-base sm:text-lg md:text-2xl mb-4 md:mb-8 animate-fade-in opacity-90 px-2">
