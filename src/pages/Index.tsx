@@ -22,7 +22,7 @@ interface SiteSetting {
 // Translation system
 const translations = {
   es: {
-    heroTitle: "RESERVA TU TOUR AQUI AHORA",
+    heroTitle: "EXPLORA TODA PUNTA CANA",
     heroSubtitle: "Transportación • Tours • Excursiones • Experiencias Inolvidables",
     searchPlaceholder: "Buscar tours, aventuras...",
     exploreButton: "Explorar Tours",
@@ -30,7 +30,7 @@ const translations = {
     smallGroups: "Grupos Pequeños",
     localGuides: "Guías Locales",
     featuredTours: "Tours Destacados",
-    featuredSubtitle: "Desde aventuras en la selva hasta relajantes días en playas paradisíacas",
+    featuredSubtitle: "Disfruta de las mejores actividades y aventuras de Punta Cana. Con la mejor calidad, mejores precios y Servicios Garantizados",
     allTours: "Todos los Tours",
     adventure: "Aventura",
     beach: "Playa & Mar",
