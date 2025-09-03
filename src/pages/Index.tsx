@@ -513,7 +513,15 @@ const Index = () => {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
-              <a href="#transportation" className="text-gray-700 hover:text-blue-600 transition-colors">Transporte</a>
+              <button 
+                onClick={() => {
+                  const element = document.getElementById('transportation');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Transporte
+              </button>
               <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
               <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
             </nav>
@@ -542,13 +550,16 @@ const Index = () => {
                 >
                   Tours
                 </a>
-                <a 
-                  href="#transportation" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button 
+                  onClick={() => {
+                    const element = document.getElementById('transportation');
+                    element?.scrollIntoView({ behavior: 'smooth' });
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2 text-left w-full"
                 >
                   Transporte
-                </a>
+                </button>
                 <a 
                   href="/nosotros" 
                   className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
