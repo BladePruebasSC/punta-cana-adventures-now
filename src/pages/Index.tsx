@@ -11,6 +11,7 @@ import { preloadTourImages } from '@/lib/imagePreloader';
 import { useNavigate } from 'react-router-dom';
 import TourCard from '@/components/TourCard';
 import TourDetailModal from '@/components/TourDetailModal';
+import TransportationSection from '@/components/TransportationSection';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface SiteSetting {
@@ -732,7 +733,10 @@ const Index = () => {
         )}
       </section>
 
-      {/* CTA Section */}
+        {/* Transportation Section */}
+        <TransportationSection />
+
+        {/* CTA Section */}
       <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-6 md:py-16 px-4">
         <div className="max-w-4xl mx-auto text-center text-white">
           <h3 className="text-xl md:text-4xl font-bold mb-2 md:mb-4">

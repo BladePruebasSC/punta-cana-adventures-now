@@ -12,7 +12,7 @@ interface ImageUploadProps {
   label?: string;
   accept?: string;
   maxSizeMB?: number;
-  bucket?: 'site-images' | 'tour-images' | 'nosotros-images';
+  bucket?: 'site-images' | 'tour-images';
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({

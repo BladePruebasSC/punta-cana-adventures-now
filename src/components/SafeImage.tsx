@@ -35,7 +35,8 @@ const SafeImage: React.FC<SafeImageProps> = ({
       setIsLoading(false);
     } else {
       // Procesar URL de Unsplash para evitar problemas de CORS
-      const processedUrl = checkUnsplashUrl(src);
+      const isUnsplash = checkUnsplashUrl(src);
+      const processedUrl = isUnsplash ? getAlternativeImageUrl(src) : src;
       setImgSrc(processedUrl);
       setHasError(false);
     }

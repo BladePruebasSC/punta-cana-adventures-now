@@ -167,3 +167,12 @@ export const getImageLoadStats = () => {
 
   return { loaded, failed, total, successRate: total > 0 ? (loaded / total) * 100 : 0 };
 };
+
+// Missing exports for SafeImage compatibility
+export const checkUnsplashUrl = (url: string): boolean => {
+  return url.includes('unsplash.com');
+};
+
+export const getAlternativeImageUrl = (originalUrl: string): string => {
+  return getImageFallback(originalUrl);
+};

@@ -1917,7 +1917,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.hero}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('hero', imageUrl)}
                     label="Imagen Hero"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
@@ -1949,7 +1949,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.inicios}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('inicios', imageUrl)}
                     label="Imagen Inicios"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
@@ -1981,7 +1981,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.experiencia}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('experiencia', imageUrl)}
                     label="Imagen Experiencia"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
