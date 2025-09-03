@@ -513,6 +513,7 @@ const Index = () => {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
+              <a href="#transportation" className="text-gray-700 hover:text-blue-600 transition-colors">Transporte</a>
               <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
               <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
             </nav>
@@ -540,6 +541,13 @@ const Index = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Tours
+                </a>
+                <a 
+                  href="#transportation" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Transporte
                 </a>
                 <a 
                   href="/nosotros" 
@@ -734,7 +742,9 @@ const Index = () => {
       </section>
 
         {/* Transportation Section */}
-        <TransportationSection />
+        <section id="transportation">
+          <TransportationSection />
+        </section>
 
         {/* CTA Section */}
       <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-6 md:py-16 px-4">
