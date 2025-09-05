@@ -213,14 +213,24 @@ const Index = () => {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as loaded for placeholder image
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false); // Start as false, preload immediately
   const [heroImageFromDB, setHeroImageFromDB] = useState<string | null>(null);
   const [heroImageFromDBLoaded, setHeroImageFromDBLoaded] = useState(false);
   
-  // Log initial state - only run once on mount
+  // Preload placeholder image immediately for instant display
   useEffect(() => {
-    console.log('🎯 Initial hero image setup - using placeholder:', heroBackgroundImage);
-  }, []); // Empty dependency array - only run once
+    const placeholderImage = '782c7fc03c4090680af502d3a7795f1d.webp';
+    const img = new Image();
+    img.onload = () => {
+      console.log('🎯 Placeholder hero image preloaded successfully');
+      setHeroImageLoaded(true);
+    };
+    img.onerror = () => {
+      console.error('❌ Failed to preload placeholder image');
+      setHeroImageLoaded(true); // Show anyway to avoid infinite loading
+    };
+    img.src = placeholderImage;
+  }, []); // Only run once on mount
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -584,7 +594,7 @@ const Index = () => {
       <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
         {/* Hero Background Image */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 ${
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-150 ${
             heroImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
