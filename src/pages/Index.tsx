@@ -314,25 +314,49 @@ const Index = () => {
               console.log('✅ Real tour data loaded and cached');
             }
 
-            // Cargar imágenes adicionales de los tours
-            const { data: imagesData, error: imagesError } = await supabase
-              .from('tour_images')
-              .select('*')
-              .order('order_index', { ascending: true });
+            // Cargar imágenes adicionales de forma no bloqueante
+            const tourIds = toursData.map(tour => tour.id);
+            
+            if (tourIds.length > 0) {
+              // Cargar imágenes en background sin bloquear la carga principal
+              setTimeout(async () => {
+                try {
+                  const imagesPromise = supabase
+                    .from('tour_images')
+                    .select('*')
+                    .in('tour_id', tourIds)
+                    .order('order_index', { ascending: true })
+                    .limit(30); // Límite muy reducido
 
-            if (imagesError) {
-              console.warn('Error loading tour images:', imagesError);
-            } else if (imagesData) {
-              // Group images by tour_id
-              const imagesByTour: Record<string, TourImage[]> = {};
-              imagesData.forEach(image => {
-                if (!imagesByTour[image.tour_id]) {
-                  imagesByTour[image.tour_id] = [];
+                  const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 5000) // 5 segundos timeout
+                  );
+
+                  const { data: imagesData, error: imagesError } = await Promise.race([
+                    imagesPromise,
+                    timeoutPromise
+                  ]) as any;
+
+                  if (imagesError) {
+                    console.warn('Tour images loading failed (non-critical):', imagesError);
+                  } else if (imagesData && imagesData.length > 0) {
+                    // Group images by tour_id
+                    const imagesByTour: Record<string, TourImage[]> = {};
+                    imagesData.forEach(image => {
+                      if (!imagesByTour[image.tour_id]) {
+                        imagesByTour[image.tour_id] = [];
+                      }
+                      imagesByTour[image.tour_id].push(image);
+                    });
+                    setTourImages(imagesByTour);
+                    tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+                    console.log('✅ Tour images loaded in background');
+                  }
+                } catch (imageError) {
+                  console.warn('Tour images loading failed (non-critical):', imageError);
+                  // No hacer nada, las imágenes son opcionales
                 }
-                imagesByTour[image.tour_id].push(image);
-              });
-              setTourImages(imagesByTour);
-              tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+              }, 2000); // Esperar 2 segundos antes de intentar cargar imágenes
             }
 
             // Cargar configuraciones del sitio incluyendo la imagen de fondo
@@ -440,13 +464,34 @@ const Index = () => {
     navigate(`/reservar/${tourId}`);
   }, [navigate]);
 
-  const handleTourClick = useCallback((tourId: string) => {
+  const handleTourClick = useCallback(async (tourId: string) => {
     const tour = tours.find(t => t.id === tourId);
     if (tour) {
       setSelectedTour(tour);
       setModalOpen(true);
+      
+      // Cargar imágenes específicas del tour si no están en caché
+      if (!tourImages[tourId] || tourImages[tourId].length === 0) {
+        try {
+          const { data: tourImagesData, error } = await supabase
+            .from('tour_images')
+            .select('*')
+            .eq('tour_id', tourId)
+            .order('order_index', { ascending: true })
+            .limit(10);
+
+          if (!error && tourImagesData && tourImagesData.length > 0) {
+            setTourImages(prev => ({
+              ...prev,
+              [tourId]: tourImagesData
+            }));
+          }
+        } catch (error) {
+          console.warn('Error loading tour images on demand:', error);
+        }
+      }
     }
-  }, [tours]);
+  }, [tours, tourImages]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
