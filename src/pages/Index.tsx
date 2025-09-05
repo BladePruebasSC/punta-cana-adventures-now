@@ -212,24 +212,14 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded, setHeroImageLoaded] = useState(false); // Start as false, preload immediately
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState('/src/assets/tour-saona-island.jpg');
+  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as true for instant display
   const [heroImageFromDB, setHeroImageFromDB] = useState<string | null>(null);
   const [heroImageFromDBLoaded, setHeroImageFromDBLoaded] = useState(false);
   
-  // Preload placeholder image immediately for instant display
+  // Hero image is now using static assets - no preloading needed
   useEffect(() => {
-    const placeholderImage = '782c7fc03c4090680af502d3a7795f1d.webp';
-    const img = new Image();
-    img.onload = () => {
-      console.log('🎯 Placeholder hero image preloaded successfully');
-      setHeroImageLoaded(true);
-    };
-    img.onerror = () => {
-      console.error('❌ Failed to preload placeholder image');
-      setHeroImageLoaded(true); // Show anyway to avoid infinite loading
-    };
-    img.src = placeholderImage;
+    console.log('🎯 Using static hero image for instant display');
   }, []); // Only run once on mount
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
@@ -612,24 +602,15 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Hero Background Image */}
+        {/* Hero Background Image - Always visible */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-150 ${
-            heroImageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url(${heroBackgroundImage})`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
         </div>
-        
-        {/* Loading placeholder - only show when no image is loaded */}
-        {!heroImageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-emerald-600 animate-pulse">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
-          </div>
-        )}
         
         {/* Subtle loading indicator when DB image is loading in background */}
         {heroImageFromDB && !heroImageFromDBLoaded && (
