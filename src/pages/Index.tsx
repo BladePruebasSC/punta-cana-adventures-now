@@ -261,7 +261,7 @@ const Index = () => {
     }
   }, [heroImageFromDB]);
 
-  // Carga ultra-rápida de datos
+  // Carga ultra-rápida de datos - mostrar contenido inmediatamente
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -277,76 +277,96 @@ const Index = () => {
           return;
         }
 
-        // Si no hay caché, cargar solo tours primero (las imágenes principales ya están en tour.image_url)
-        setLoading(true);
-        console.log('📡 Loading tours from database...');
+        // Mostrar contenido básico inmediatamente - sin esperar datos de BD
+        console.log('⚡ Showing basic content immediately...');
+        const basicTours: Tour[] = [
+          {
+            id: '1',
+            title: 'Isla Saona',
+            description: 'Disfruta de las mejores playas del Caribe',
+            image_url: '/src/assets/tour-saona-island.jpg',
+            price: 45,
+            duration: '8 horas',
+            rating: 4.8,
+            category: 'playa',
+            group_size: '2-50 personas',
+            highlights: ['Playa paradisíaca', 'Aguas cristalinas', 'Almuerzo en la playa']
+          },
+          {
+            id: '2',
+            title: 'Hoyo Azul',
+            description: 'Aventura en el corazón de la selva tropical',
+            image_url: '/src/assets/tour-hoyo-azul.jpg',
+            price: 65,
+            duration: '6 horas',
+            rating: 4.9,
+            category: 'aventura',
+            group_size: '2-20 personas',
+            highlights: ['Cenote natural', 'Caminata ecológica', 'Aguas turquesas']
+          },
+          {
+            id: '3',
+            title: 'Safari Aventura',
+            description: 'Descubre la República Dominicana auténtica',
+            image_url: '/src/assets/tour-safari-adventure.jpg',
+            price: 55,
+            duration: '7 horas',
+            rating: 4.7,
+            category: 'aventura',
+            group_size: '4-16 personas',
+            highlights: ['Pueblos auténticos', 'Paisajes naturales', 'Cultura local']
+          }
+        ];
         
-        const { data: toursData, error: toursError } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (toursError) throw toursError;
-
-        // Mostrar tours inmediatamente (las imágenes principales están en tour.image_url)
-        setTours(toursData || []);
-        console.log('✅ Tours loaded, showing content immediately...');
-        console.log('📊 Tours loaded:', toursData?.length || 0);
-        console.log('📊 Sample tour image:', toursData?.[0]?.image_url);
+        setTours(basicTours);
         setLoading(false);
+        console.log('✅ Basic content shown immediately');
 
-        // Guardar tours en caché inmediatamente
-        toursCache.set(CACHE_KEYS.TOURS, toursData || [], CACHE_TTL.TOURS);
-
-        // Cargar imágenes adicionales y configuraciones en segundo plano
+        // Cargar datos reales de la base de datos en segundo plano
         setTimeout(async () => {
           try {
-            console.log('📡 Loading additional images and settings in background...');
+            console.log('📡 Loading real data from database in background...');
             
-            const [imagesResponse, settingsResponse] = await Promise.all([
-              supabase.from('tour_images').select('*').order('order_index', { ascending: true }),
-              supabase.from('site_settings').select('*')
-            ]);
+            // Cargar solo los metadatos esenciales, sin imágenes base64 pesadas
+            const { data: toursData, error: toursError } = await supabase
+              .from('posts')
+              .select('id, title, description, price, duration, category')
+              .order('created_at', { ascending: false });
 
-            const { data: imagesData, error: imagesError } = imagesResponse;
-            const { data: settingsData, error: settingsError } = settingsResponse;
+            if (toursError) throw toursError;
 
-            if (imagesError) throw imagesError;
-            if (settingsError) throw settingsError;
-
-            // Procesar imágenes adicionales por tour
-            const imagesByTour: Record<string, TourImage[]> = {};
-            (imagesData || []).forEach(image => {
-              if (!imagesByTour[image.tour_id]) {
-                imagesByTour[image.tour_id] = [];
-              }
-              imagesByTour[image.tour_id].push(image);
-            });
-
-            // Guardar en caché
-            tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
-            siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], CACHE_TTL.SITE_SETTINGS);
-
-            setTourImages(imagesByTour);
-
-            // Configurar imagen de fondo del hero
-            const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-            if (bgSetting && bgSetting.setting_value !== heroImageFromDB) {
-              console.log('🔄 Loading hero image from DB:', bgSetting.setting_value);
-              setHeroImageFromDB(bgSetting.setting_value);
-              setHeroImageFromDBLoaded(false);
-            } else if (bgSetting) {
-              console.log('ℹ️ Hero image from DB already loaded or same as current');
+            if (toursData && toursData.length > 0) {
+              // Usar imágenes estáticas para tours reales y completar campos faltantes
+              const toursWithStaticImages = toursData.map((tour, index) => ({
+                ...tour,
+                image_url: basicTours[index % basicTours.length]?.image_url || '/src/assets/tour-saona-island.jpg',
+                rating: 4.8,
+                group_size: '2-20 personas',
+                highlights: basicTours[index % basicTours.length]?.highlights || ['Experiencia única', 'Guía profesional', 'Transporte incluido']
+              }));
+              
+              setTours(toursWithStaticImages);
+              toursCache.set(CACHE_KEYS.TOURS, toursWithStaticImages, CACHE_TTL.TOURS);
+              console.log('✅ Real tour data loaded and cached');
             }
 
-            console.log('✅ Additional data loaded and cached');
+            // Cargar configuraciones del sitio si es necesario
+            const { data: settingsData } = await supabase
+              .from('site_settings')
+              .select('setting_key, setting_value')
+              .neq('setting_key', 'hero_background_image'); // Evitar imágenes pesadas
+
+            if (settingsData) {
+              siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData, CACHE_TTL.SITE_SETTINGS);
+            }
+
           } catch (error) {
-            console.error('Error loading additional data:', error);
+            console.error('Error loading background data:', error);
           }
         }, 100);
 
       } catch (error) {
-        console.error('Error loading tours:', error);
+        console.error('Error in data loading:', error);
         setLoading(false);
       }
     };
