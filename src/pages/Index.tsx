@@ -11,6 +11,7 @@ import { preloadTourImages } from '@/lib/imagePreloader';
 import { useNavigate } from 'react-router-dom';
 import TourCard from '@/components/TourCard';
 import TourDetailModal from '@/components/TourDetailModal';
+import TransportationSection from '@/components/TransportationSection';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 
 interface SiteSetting {
@@ -54,7 +55,7 @@ const translations = {
     corporateGroups: "Grupos Corporativos",
     transportation: "Transporte",
     certifiedGuides: "Guías Certificados",
-    copyright: "© 2024 Jon Tours and Adventure. Todos los derechos reservados.",
+    copyright: "© 2024 Jon Tour Punta Cana. Todos los derechos reservados.",
     authenticExperiences: "Experiencias Auténticas",
     saonaIsland: "Isla Saona",
     safariAdventure: "Safari Aventura",
@@ -95,7 +96,7 @@ const translations = {
     corporateGroups: "Corporate Groups",
     transportation: "Transportation",
     certifiedGuides: "Certified Guides",
-    copyright: "© 2024 Jon Tours and Adventure. All rights reserved.",
+    copyright: "© 2024 Jon Tour Punta Cana. All rights reserved.",
     authenticExperiences: "Authentic Experiences",
     saonaIsland: "Saona Island",
     safariAdventure: "Safari Adventure",
@@ -136,7 +137,7 @@ const translations = {
     corporateGroups: "Groupes d'Entreprise",
     transportation: "Transport",
     certifiedGuides: "Guides Certifiés",
-    copyright: "© 2024 Jon Tours and Adventure. Tous droits réservés.",
+    copyright: "© 2024 Jon Tour Punta Cana. Tous droits réservés.",
     authenticExperiences: "Expériences Authentiques",
     saonaIsland: "Île Saona",
     safariAdventure: "Safari Aventure",
@@ -211,15 +212,9 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [heroBackgroundImage, setHeroBackgroundImage] = useState('782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded, setHeroImageLoaded] = useState(true); // Start as loaded for placeholder image
-  const [heroImageFromDB, setHeroImageFromDB] = useState<string | null>(null);
-  const [heroImageFromDBLoaded, setHeroImageFromDBLoaded] = useState(false);
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState('public/782c7fc03c4090680af502d3a7795f1d.webp');
+  const [heroImageLoaded] = useState(true); // Always true for static images
   
-  // Log initial state - only run once on mount
-  useEffect(() => {
-    console.log('🎯 Initial hero image setup - using placeholder:', heroBackgroundImage);
-  }, []); // Empty dependency array - only run once
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
     { id: 'todos', name: t.allTours, count: 0 },
@@ -229,28 +224,7 @@ const Index = () => {
     { id: 'naturaleza', name: t.nature, count: 0 }
   ]);
 
-  // Preload hero image from DB when it changes
-  useEffect(() => {
-    if (heroImageFromDB) {
-      const img = new Image();
-      img.onload = () => {
-        console.log('✅ Hero image from DB loaded successfully:', heroImageFromDB);
-        setHeroImageFromDBLoaded(true);
-        // Only switch to DB image when it's fully loaded
-        setHeroBackgroundImage(heroImageFromDB);
-        setHeroImageLoaded(true);
-      };
-      img.onerror = () => {
-        console.error('❌ Hero image from DB failed to load:', heroImageFromDB);
-        setHeroImageFromDBLoaded(false);
-        // Keep placeholder if DB image fails
-        setHeroImageLoaded(true);
-      };
-      img.src = heroImageFromDB;
-    }
-  }, [heroImageFromDB]);
-
-  // Carga ultra-rápida de datos
+  // Carga ultra-rápida de datos - mostrar contenido inmediatamente
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -266,76 +240,124 @@ const Index = () => {
           return;
         }
 
-        // Si no hay caché, cargar solo tours primero (las imágenes principales ya están en tour.image_url)
-        setLoading(true);
-        console.log('📡 Loading tours from database...');
+        // Mostrar contenido básico inmediatamente - sin esperar datos de BD
+        console.log('⚡ Showing basic content immediately...');
+        const basicTours: Tour[] = [
+          {
+            id: '1',
+            title: 'Isla Saona',
+            description: 'Disfruta de las mejores playas del Caribe',
+            image_url: '/src/assets/tour-saona-island.jpg',
+            price: 45,
+            duration: '8 horas',
+            rating: 4.8,
+            category: 'playa',
+            group_size: '2-50 personas',
+            highlights: ['Playa paradisíaca', 'Aguas cristalinas', 'Almuerzo en la playa']
+          },
+          {
+            id: '2',
+            title: 'Hoyo Azul',
+            description: 'Aventura en el corazón de la selva tropical',
+            image_url: '/src/assets/tour-hoyo-azul.jpg',
+            price: 65,
+            duration: '6 horas',
+            rating: 4.9,
+            category: 'aventura',
+            group_size: '2-20 personas',
+            highlights: ['Cenote natural', 'Caminata ecológica', 'Aguas turquesas']
+          },
+          {
+            id: '3',
+            title: 'Safari Aventura',
+            description: 'Descubre la República Dominicana auténtica',
+            image_url: 'public/1.jpg',
+            price: 55,
+            duration: '7 horas',
+            rating: 4.7,
+            category: 'aventura',
+            group_size: '4-16 personas',
+            highlights: ['Pueblos auténticos', 'Paisajes naturales', 'Cultura local']
+          }
+        ];
         
-        const { data: toursData, error: toursError } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (toursError) throw toursError;
-
-        // Mostrar tours inmediatamente (las imágenes principales están en tour.image_url)
-        setTours(toursData || []);
-        console.log('✅ Tours loaded, showing content immediately...');
-        console.log('📊 Tours loaded:', toursData?.length || 0);
-        console.log('📊 Sample tour image:', toursData?.[0]?.image_url);
+        setTours(basicTours);
         setLoading(false);
+        console.log('✅ Basic content shown immediately');
 
-        // Guardar tours en caché inmediatamente
-        toursCache.set(CACHE_KEYS.TOURS, toursData || [], CACHE_TTL.TOURS);
-
-        // Cargar imágenes adicionales y configuraciones en segundo plano
+        // Cargar datos reales de la base de datos en segundo plano
         setTimeout(async () => {
           try {
-            console.log('📡 Loading additional images and settings in background...');
+            console.log('📡 Loading real data from database in background...');
             
-            const [imagesResponse, settingsResponse] = await Promise.all([
-              supabase.from('tour_images').select('*').order('order_index', { ascending: true }),
-              supabase.from('site_settings').select('*')
-            ]);
+            // Cargar solo los metadatos esenciales, sin imágenes base64 pesadas
+            const { data: toursData, error: toursError } = await supabase
+              .from('posts')
+              .select('id, title, description, price, duration, category')
+              .order('created_at', { ascending: false });
 
-            const { data: imagesData, error: imagesError } = imagesResponse;
-            const { data: settingsData, error: settingsError } = settingsResponse;
+            if (toursError) throw toursError;
 
-            if (imagesError) throw imagesError;
-            if (settingsError) throw settingsError;
-
-            // Procesar imágenes adicionales por tour
-            const imagesByTour: Record<string, TourImage[]> = {};
-            (imagesData || []).forEach(image => {
-              if (!imagesByTour[image.tour_id]) {
-                imagesByTour[image.tour_id] = [];
-              }
-              imagesByTour[image.tour_id].push(image);
-            });
-
-            // Guardar en caché
-            tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
-            siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], CACHE_TTL.SITE_SETTINGS);
-
-            setTourImages(imagesByTour);
-
-            // Configurar imagen de fondo del hero
-            const bgSetting = settingsData?.find((s: SiteSetting) => s.setting_key === 'hero_background_image');
-            if (bgSetting && bgSetting.setting_value !== heroImageFromDB) {
-              console.log('🔄 Loading hero image from DB:', bgSetting.setting_value);
-              setHeroImageFromDB(bgSetting.setting_value);
-              setHeroImageFromDBLoaded(false);
-            } else if (bgSetting) {
-              console.log('ℹ️ Hero image from DB already loaded or same as current');
+            if (toursData && toursData.length > 0) {
+              // Usar las imágenes reales de la base de datos y completar campos faltantes
+              const toursWithRealImages = toursData.map((tour: any, index) => ({
+                ...tour,
+                // Mantener la image_url original de la base de datos
+                image_url: tour.image_url || basicTours[index % basicTours.length]?.image_url || '/src/assets/tour-saona-island.jpg',
+                rating: tour.rating || 4.8,
+                group_size: tour.group_size || '2-20 personas',
+                highlights: tour.highlights || basicTours[index % basicTours.length]?.highlights || ['Experiencia única', 'Guía profesional', 'Transporte incluido']
+              }));
+              
+              setTours(toursWithRealImages);
+              toursCache.set(CACHE_KEYS.TOURS, toursWithRealImages, CACHE_TTL.TOURS);
+              console.log('✅ Real tour data loaded and cached');
             }
 
-            console.log('✅ Additional data loaded and cached');
+            // Cargar imágenes adicionales de los tours
+            const { data: imagesData, error: imagesError } = await supabase
+              .from('tour_images')
+              .select('*')
+              .order('order_index', { ascending: true });
+
+            if (imagesError) {
+              console.warn('Error loading tour images:', imagesError);
+            } else if (imagesData) {
+              // Group images by tour_id
+              const imagesByTour: Record<string, TourImage[]> = {};
+              imagesData.forEach(image => {
+                if (!imagesByTour[image.tour_id]) {
+                  imagesByTour[image.tour_id] = [];
+                }
+                imagesByTour[image.tour_id].push(image);
+              });
+              setTourImages(imagesByTour);
+              tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+            }
+
+            // Cargar configuraciones del sitio incluyendo la imagen de fondo
+            const { data: settingsData } = await supabase
+              .from('site_settings')
+              .select('setting_key, setting_value');
+
+            if (settingsData) {
+              siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData, CACHE_TTL.SITE_SETTINGS);
+              
+              // Actualizar la imagen de fondo del hero si existe
+              const heroBgSetting = settingsData.find(s => s.setting_key === 'hero_background_image');
+              if (heroBgSetting && heroBgSetting.setting_value) {
+                // Actualizar el estado de la imagen de fondo
+                setHeroBackgroundImage(heroBgSetting.setting_value);
+              }
+            }
+
           } catch (error) {
-            console.error('Error loading additional data:', error);
+            console.error('Error loading background data:', error);
           }
         }, 100);
 
       } catch (error) {
-        console.error('Error loading tours:', error);
+        console.error('Error in data loading:', error);
         setLoading(false);
       }
     };
@@ -452,7 +474,7 @@ const Index = () => {
 
   const handleWhatsAppClick = () => {
     const phoneNumber = '18098408257';
-    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tours and Adventure* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
+    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tour Punta Cana* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
     
     // iOS-friendly WhatsApp redirect
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -471,7 +493,7 @@ const Index = () => {
   };
 
   const handleEmailClick = () => {
-    const email = 'info@jontours.com';
+    const email = 'jontourpuntacana@gmail.com';
     const subject = encodeURIComponent('Consulta sobre Tours en Punta Cana');
     const body = encodeURIComponent('Hola,\n\nMe interesa obtener más información sobre sus tours en Punta Cana.\n\nGracias');
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -503,7 +525,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  JON TOUR & ADVENTURE
+                  JON TOUR PUNTA CANA
                 </h1>
                 <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
               </div>
@@ -512,6 +534,15 @@ const Index = () => {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
+              <button 
+                onClick={() => {
+                  const element = document.getElementById('transportation');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Transporte
+              </button>
               <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
               <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
             </nav>
@@ -540,6 +571,16 @@ const Index = () => {
                 >
                   Tours
                 </a>
+                <button 
+                  onClick={() => {
+                    const element = document.getElementById('transportation');
+                    element?.scrollIntoView({ behavior: 'smooth' });
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2 text-left w-full"
+                >
+                  Transporte
+                </button>
                 <a 
                   href="/nosotros" 
                   className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
@@ -562,11 +603,9 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Hero Background Image */}
+        {/* Hero Background Image - Always visible */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 ${
-            heroImageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url(${heroBackgroundImage})`
           }}
@@ -574,21 +613,7 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
         </div>
         
-        {/* Loading placeholder - only show when no image is loaded */}
-        {!heroImageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-emerald-600 animate-pulse">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
-          </div>
-        )}
-        
-        {/* Subtle loading indicator when DB image is loading in background */}
-        {heroImageFromDB && !heroImageFromDBLoaded && (
-          <div className="absolute top-4 right-4 z-20">
-            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            </div>
-          </div>
-        )}
+        {/* No loading indicators needed - static image loads instantly */}
         
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
@@ -732,7 +757,12 @@ const Index = () => {
         )}
       </section>
 
-      {/* CTA Section */}
+        {/* Transportation Section */}
+        <section id="transportation">
+          <TransportationSection />
+        </section>
+
+        {/* CTA Section */}
       <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-6 md:py-16 px-4">
         <div className="max-w-4xl mx-auto text-center text-white">
           <h3 className="text-xl md:text-4xl font-bold mb-2 md:mb-4">
@@ -755,7 +785,7 @@ const Index = () => {
               className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
               onClick={handleEmailClick}
             >
-              Email: info@jontours.com
+              Email: jontourpuntacana@gmail.com
             </Button>
           </div>
         </div>
@@ -769,7 +799,7 @@ const Index = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold">Jon Tours and Adventure</span>
+              <span className="text-xl font-bold">Jon Tour Punta Cana</span>
             </div>
             <p className="text-gray-400">
               {currentLanguage === 'es' ? 'Tu compañía de confianza para explorar lo mejor de República Dominicana.' :
@@ -808,7 +838,7 @@ const Index = () => {
             </h4>
             <ul className="space-y-2 text-gray-400">
               <li>📱 +1 (809) 840-8257</li>
-              <li>✉️ info@jontours.com</li>
+              <li>✉️ jontourpuntacana@gmail.com</li>
               <li>🕒 {t.hours}</li>
             </ul>
           </div>

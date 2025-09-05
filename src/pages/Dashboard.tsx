@@ -418,7 +418,7 @@ const Dashboard = () => {
   };
 
   const sendConfirmationWhatsApp = (reservation: Reservation) => {
-    const message = `🎉 *RESERVA CONFIRMADA - Jon Tours and Adventure* 🎉
+    const message = `🎉 *RESERVA CONFIRMADA - Jon Tour Punta Cana* 🎉
 
 ¡Hola ${reservation.name}! ✨
 
@@ -437,7 +437,7 @@ Tu reserva ha sido confirmada exitosamente:
 
 ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_requests}\n\n` : ''}¡Estamos emocionados de tenerte en esta aventura! 🌴
 
-*Jon Tours and Adventure*
+*Jon Tour Punta Cana*
 +1 (809) 840-8257`;
 
     const phoneNumber = reservation.phone.replace(/[^\d]/g, '');
@@ -511,7 +511,7 @@ ${message.message}
 ¿En qué podemos ayudarte? 
 
 Saludos,
-Jon Tours and Adventure
+Jon Tour Punta Cana
 +1 (809) 840-8257`;
 
     const encodedMessage = encodeURIComponent(messageText);
@@ -964,7 +964,7 @@ Jon Tours and Adventure
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Jon Tours Dashboard
+              Jon Tour Punta Cana Dashboard
             </CardTitle>
             <CardDescription>
               Ingresa la contraseña para acceder
@@ -1028,7 +1028,7 @@ Jon Tours and Adventure
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Dashboard - Jon Tours
+              Dashboard - Jon Tour Punta Cana
             </h1>
             <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
               <Button
@@ -1917,7 +1917,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.hero}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('hero', imageUrl)}
                     label="Imagen Hero"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
@@ -1949,7 +1949,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.inicios}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('inicios', imageUrl)}
                     label="Imagen Inicios"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
@@ -1981,7 +1981,7 @@ Jon Tours and Adventure
                     currentImageUrl={nosotrosImages.experiencia}
                     onImageChange={(imageUrl) => handleNosotrosImageChange('experiencia', imageUrl)}
                     label="Imagen Experiencia"
-                    bucket="nosotros-images"
+                    bucket="site-images"
                     maxSizeMB={10}
                   />
                   
