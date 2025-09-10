@@ -290,16 +290,37 @@ const Index = () => {
           try {
             console.log('📡 Loading real data from database in background...');
             
-            // Cargar solo los metadatos esenciales, sin imágenes base64 pesadas
+            // Cargar los tours desde la base de datos
             const { data: toursData, error: toursError } = await supabase
               .from('posts')
-              .select('id, title, description, price, duration, category')
+              .select('id, title, description, price, duration, category, image_url, rating, group_size, highlights')
               .order('created_at', { ascending: false });
 
-            if (toursError) throw toursError;
+            if (toursError) {
+              console.error('Error loading tours from database:', toursError);
+              throw toursError;
+            }
+
+            console.log('📊 Raw tours data from database:', toursData);
 
             if (toursData && toursData.length > 0) {
-
+              // Procesar los tours de la base de datos
+              const processedTours: Tour[] = toursData.map((tour: any) => ({
+                id: tour.id,
+                title: tour.title,
+                description: tour.description,
+                image_url: tour.image_url || '/placeholder.svg',
+                price: tour.price || 0,
+                duration: tour.duration || '4 horas',
+                rating: tour.rating || 4.8,
+                category: tour.category || 'aventura',
+                group_size: tour.group_size || '2-20 personas',
+                highlights: Array.isArray(tour.highlights) ? tour.highlights : ['Experiencia única', 'Guía profesional', 'Transporte incluido']
+              }));
+              
+              setTours(processedTours);
+              toursCache.set(CACHE_KEYS.TOURS, processedTours, CACHE_TTL.TOURS);
+              console.log('✅ Tours reales cargados desde la base de datos:', processedTours.length);
             }
 
           } catch (error) {
