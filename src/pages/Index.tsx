@@ -212,6 +212,8 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState<string>('/782c7fc03c4090680af502d3a7795f1d.webp');
+  const [heroImageLoaded] = useState(true); // Always true for static images
   
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
@@ -269,7 +271,7 @@ const Index = () => {
             id: '3',
             title: 'Safari Aventura',
             description: 'Descubre la República Dominicana auténtica',
-
+            image_url: '/1.jpg',
             price: 55,
             duration: '7 horas',
             rating: 4.7,
@@ -577,7 +579,7 @@ const Index = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url(${heroBackgroundImage})`
+            backgroundImage: `url(${heroBackgroundImage || '/782c7fc03c4090680af502d3a7795f1d.webp'})`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
