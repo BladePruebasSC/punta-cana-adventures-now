@@ -212,8 +212,6 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [heroBackgroundImage, setHeroBackgroundImage] = useState('public/782c7fc03c4090680af502d3a7795f1d.webp');
-  const [heroImageLoaded] = useState(true); // Always true for static images
   
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
@@ -271,7 +269,7 @@ const Index = () => {
             id: '3',
             title: 'Safari Aventura',
             description: 'Descubre la República Dominicana auténtica',
-            image_url: 'public/1.jpg',
+
             price: 55,
             duration: '7 horas',
             rating: 4.7,
@@ -299,80 +297,7 @@ const Index = () => {
             if (toursError) throw toursError;
 
             if (toursData && toursData.length > 0) {
-              // Usar las imágenes reales de la base de datos y completar campos faltantes
-              const toursWithRealImages = toursData.map((tour: any, index) => ({
-                ...tour,
-                // Mantener la image_url original de la base de datos
-                image_url: tour.image_url || basicTours[index % basicTours.length]?.image_url || '/src/assets/tour-saona-island.jpg',
-                rating: tour.rating || 4.8,
-                group_size: tour.group_size || '2-20 personas',
-                highlights: tour.highlights || basicTours[index % basicTours.length]?.highlights || ['Experiencia única', 'Guía profesional', 'Transporte incluido']
-              }));
-              
-              setTours(toursWithRealImages);
-              toursCache.set(CACHE_KEYS.TOURS, toursWithRealImages, CACHE_TTL.TOURS);
-              console.log('✅ Real tour data loaded and cached');
-            }
 
-            // Cargar imágenes adicionales de forma no bloqueante
-            const tourIds = toursData.map(tour => tour.id);
-            
-            if (tourIds.length > 0) {
-              // Cargar imágenes en background sin bloquear la carga principal
-              setTimeout(async () => {
-                try {
-                  const imagesPromise = supabase
-                    .from('tour_images')
-                    .select('*')
-                    .in('tour_id', tourIds)
-                    .order('order_index', { ascending: true })
-                    .limit(30); // Límite muy reducido
-
-                  const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 5000) // 5 segundos timeout
-                  );
-
-                  const { data: imagesData, error: imagesError } = await Promise.race([
-                    imagesPromise,
-                    timeoutPromise
-                  ]) as any;
-
-                  if (imagesError) {
-                    console.warn('Tour images loading failed (non-critical):', imagesError);
-                  } else if (imagesData && imagesData.length > 0) {
-                    // Group images by tour_id
-                    const imagesByTour: Record<string, TourImage[]> = {};
-                    imagesData.forEach(image => {
-                      if (!imagesByTour[image.tour_id]) {
-                        imagesByTour[image.tour_id] = [];
-                      }
-                      imagesByTour[image.tour_id].push(image);
-                    });
-                    setTourImages(imagesByTour);
-                    tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
-                    console.log('✅ Tour images loaded in background');
-                  }
-                } catch (imageError) {
-                  console.warn('Tour images loading failed (non-critical):', imageError);
-                  // No hacer nada, las imágenes son opcionales
-                }
-              }, 2000); // Esperar 2 segundos antes de intentar cargar imágenes
-            }
-
-            // Cargar configuraciones del sitio incluyendo la imagen de fondo
-            const { data: settingsData } = await supabase
-              .from('site_settings')
-              .select('setting_key, setting_value');
-
-            if (settingsData) {
-              siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData, CACHE_TTL.SITE_SETTINGS);
-              
-              // Actualizar la imagen de fondo del hero si existe
-              const heroBgSetting = settingsData.find(s => s.setting_key === 'hero_background_image');
-              if (heroBgSetting && heroBgSetting.setting_value) {
-                // Actualizar el estado de la imagen de fondo
-                setHeroBackgroundImage(heroBgSetting.setting_value);
-              }
             }
 
           } catch (error) {
