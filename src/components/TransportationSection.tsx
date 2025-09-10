@@ -77,6 +77,40 @@ const TransportationSection = () => {
     }
   };
 
+  const handleDestinationClick = (destination: TransportationDestination) => {
+    const phoneNumber = '18098408257';
+    const message = `🚗 *SOLICITUD DE TRASLADO - Jon Tour Punta Cana* 🚗
+
+¡Hola! Me interesa contratar el servicio de traslado.
+
+📍 *Destino solicitado:*
+${destination.name}
+
+💰 *Precio:*
+US$${destination.price}.00
+
+📋 *Detalles del servicio:*
+• Traslado desde/hacia el aeropuerto
+• Hasta 4 personas por viaje
+• Servicio 24/7
+
+¿Podrían confirmar disponibilidad y proceder con la reserva?
+
+¡Gracias!`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      window.location.href = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+      setTimeout(() => {
+        window.open(`https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`, '_blank');
+      }, 2000);
+    } else {
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+    }
+  };
+
   return (
     <section className="py-16 bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4">
@@ -84,13 +118,13 @@ const TransportationSection = () => {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
             <Car className="w-4 h-4" />
-            TAXI SERVICE 24 HOURS
+            SERVICIOS DE TRANSPORTE Y TRASLADO
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Servicio de Transporte
+            TRANSPORTE
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Transporte seguro y confiable las 24 horas del día. Tarifas fijas desde tu hotel hacia cualquier destino en Punta Cana.
+            AGENDA TU SERVICIO DE TRASLADO DESDE EL AEROPUERTO HASTA TU HOTEL Y DE REGRESO CON NOSOTROS AHORA.
           </p>
         </div>
 
@@ -98,16 +132,16 @@ const TransportationSection = () => {
         <div className="grid md:grid-cols-4 gap-4 mb-12">
           <Card className="text-center p-4">
             <CardContent className="pt-4">
-              <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <h3 className="font-semibold mb-1">24 Horas</h3>
-              <p className="text-sm text-gray-600">Disponible siempre</p>
+            <Car className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1">Viaja Con Seguridad</h3>
+              <p className="text-sm text-gray-600">Comodas y modernas unidades</p>
             </CardContent>
           </Card>
           <Card className="text-center p-4">
             <CardContent className="pt-4">
               <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <h3 className="font-semibold mb-1">Hasta 4 Personas</h3>
-              <p className="text-sm text-gray-600">Máximo por viaje</p>
+              <h3 className="font-semibold mb-1">Precio Por Vias</h3>
+              <p className="text-sm text-gray-600">Desde 1 a 4 Personas</p>
             </CardContent>
           </Card>
           <Card className="text-center p-4">
@@ -119,9 +153,9 @@ const TransportationSection = () => {
           </Card>
           <Card className="text-center p-4">
             <CardContent className="pt-4">
-              <Car className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <h3 className="font-semibold mb-1">Vehículos Seguros</h3>
-              <p className="text-sm text-gray-600">Flota moderna</p>
+              <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <h3 className="font-semibold mb-1">Confirma Tu Traslado</h3>
+              <p className="text-sm text-gray-600">Minimo 24 horas de anticipacion</p>
             </CardContent>
           </Card>
         </div>
@@ -129,18 +163,22 @@ const TransportationSection = () => {
         {/* Destinations Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {destinations.map((destination, index) => (
-            <Card key={index} className="group hover:shadow-lg transition-shadow">
+            <Card 
+              key={index} 
+              className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-105 border-2 hover:border-blue-300"
+              onClick={() => handleDestinationClick(destination)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                      <h3 className="font-medium text-sm leading-tight">
+                      <h3 className="font-medium text-sm leading-tight group-hover:text-blue-600 transition-colors">
                         {destination.name}
                       </h3>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="ml-2 flex-shrink-0">
+                  <Badge variant="secondary" className="ml-2 flex-shrink-0 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                     US${destination.price}.00
                   </Badge>
                 </div>

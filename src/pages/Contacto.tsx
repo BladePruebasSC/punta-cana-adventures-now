@@ -98,7 +98,7 @@ const Contacto = () => {
                 <MapPin className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                Jon Tours and Adventure
+                Jon Tour Punta Cana
               </h1>
             </div>
           </div>
@@ -145,7 +145,7 @@ const Contacto = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">Email</h4>
-                    <p className="text-gray-600">info@jontours.com</p>
+                    <p className="text-gray-600">jontourpuntacana@gmail.com</p>
                     <p className="text-sm text-gray-500">Respuesta en 24 horas</p>
                   </div>
                 </div>
@@ -384,7 +384,7 @@ const Contacto = () => {
         <section className="mt-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Sobre Jon Tour & Adventure
+              Sobre Jon Tour Punta Cana
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Más de 20 años creando experiencias inolvidables en Punta Cana
@@ -402,7 +402,7 @@ const Contacto = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-gray-700">
-                  <strong>Jon Tour & Adventure</strong> nace en el 2021 como una empresa operadora 
+                  <strong>Jon Tour Punta Cana</strong> nace en el 2021 como una empresa operadora 
                   especializada en ventas de productos vacacionales online y servicios terrestres.
                 </p>
                 <p className="text-gray-700">
@@ -464,7 +464,7 @@ const Contacto = () => {
             <CardContent className="text-center space-y-4">
               <div className="flex items-center justify-center space-x-2">
                 <Mail className="w-4 h-4 text-blue-600" />
-                <span className="text-gray-700 break-all">Jonathanfrancoisg@gmail.com</span>
+                <span className="text-gray-700 break-all">jontourpuntacana@gmail.com</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <Phone className="w-4 h-4 text-blue-600" />

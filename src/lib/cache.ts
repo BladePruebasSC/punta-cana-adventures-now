@@ -69,6 +69,21 @@ class SimpleCache {
       keys: Array.from(this.cache.keys())
     };
   }
+
+  // Invalidar caché por patrón de clave
+  invalidatePattern(pattern: string): void {
+    const regex = new RegExp(pattern);
+    for (const key of this.cache.keys()) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  // Forzar actualización de datos específicos
+  forceRefresh(key: string): void {
+    this.cache.delete(key);
+  }
 }
 
 // Cache instances for different data types with ultra-long TTLs
@@ -98,3 +113,38 @@ export const CACHE_TTL = {
   MESSAGES: 5 * 60 * 1000, // 5 minutos (datos que cambian frecuentemente)
   TOUR_DETAIL: 30 * 24 * 60 * 60 * 1000, // 30 días
 } as const;
+
+// Funciones de utilidad para invalidar caché
+export const invalidateCache = {
+  // Invalidar todos los tours
+  tours: () => {
+    toursCache.forceRefresh(CACHE_KEYS.TOURS);
+    toursCache.invalidatePattern('^tour_');
+  },
+  
+  // Invalidar imágenes de tours
+  tourImages: () => {
+    tourImagesCache.forceRefresh(CACHE_KEYS.TOUR_IMAGES);
+    tourImagesCache.invalidatePattern('^tour_images_');
+  },
+  
+  // Invalidar configuraciones del sitio
+  siteSettings: () => {
+    siteSettingsCache.forceRefresh(CACHE_KEYS.SITE_SETTINGS);
+  },
+  
+  // Invalidar un tour específico
+  tour: (tourId: string) => {
+    toursCache.forceRefresh(CACHE_KEYS.TOUR_DETAIL(tourId));
+    tourImagesCache.forceRefresh(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId));
+  },
+  
+  // Invalidar todo el caché
+  all: () => {
+    toursCache.clear();
+    tourImagesCache.clear();
+    siteSettingsCache.clear();
+    reservationsCache.clear();
+    messagesCache.clear();
+  }
+};

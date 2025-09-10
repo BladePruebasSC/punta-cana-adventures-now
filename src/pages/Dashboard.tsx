@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
-import { toursCache, tourImagesCache, siteSettingsCache, reservationsCache, messagesCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
+import { toursCache, tourImagesCache, siteSettingsCache, reservationsCache, messagesCache, CACHE_KEYS, CACHE_TTL, invalidateCache } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -228,11 +228,58 @@ const Dashboard = () => {
         try {
           console.log('📡 Loading additional data (posts, images, settings)...');
           
-          const [postsResponse, imagesResponse, settingsResponse] = await Promise.all([
+          const [postsResponse, settingsResponse] = await Promise.all([
             supabase.from('posts').select('*').order('created_at', { ascending: false }),
-            supabase.from('tour_images').select('*').order('order_index', { ascending: true }),
             supabase.from('site_settings').select('*').order('created_at', { ascending: false })
           ]);
+
+          // Cargar imágenes de forma completamente opcional (no bloquear el dashboard)
+          let imagesResponse = { data: [], error: null };
+          
+          // Cargar imágenes en segundo plano sin bloquear la UI
+          if (postsResponse.data && postsResponse.data.length > 0) {
+            // No esperar por las imágenes, cargarlas en background
+            setTimeout(async () => {
+              try {
+                const tourIds = postsResponse.data.map(post => post.id);
+                
+                // Consulta más agresiva con timeout muy corto
+                const imagesPromise = supabase
+                  .from('tour_images')
+                  .select('*')
+                  .in('tour_id', tourIds)
+                  .order('order_index', { ascending: true })
+                  .limit(50); // Reducir aún más el límite
+
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Timeout')), 5000) // Solo 5 segundos
+                );
+
+                const result = await Promise.race([
+                  imagesPromise,
+                  timeoutPromise
+                ]) as any;
+
+                if (result.data && result.data.length > 0) {
+                  // Group images by tour_id
+                  const imagesByTour: Record<string, TourImage[]> = {};
+                  result.data.forEach(image => {
+                    if (!imagesByTour[image.tour_id]) {
+                      imagesByTour[image.tour_id] = [];
+                    }
+                    imagesByTour[image.tour_id].push(image);
+                  });
+                  
+                  setTourImages(imagesByTour);
+                  tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+                  console.log('✅ Tour images loaded in background');
+                }
+              } catch (imageError) {
+                console.warn('Tour images loading failed (non-critical):', imageError);
+                // No hacer nada, las imágenes son opcionales
+              }
+            }, 1000); // Esperar 1 segundo antes de intentar cargar imágenes
+          }
 
           const { data: postsData, error: postsError } = postsResponse;
           const { data: imagesData, error: imagesError } = imagesResponse;
@@ -321,6 +368,9 @@ const Dashboard = () => {
         title: "Configuración actualizada",
         description: "Los cambios se han guardado exitosamente",
       });
+
+      // Invalidar caché de configuraciones del sitio
+      invalidateCache.siteSettings();
 
       // Update local state
       setSiteSettings(prev => {
@@ -418,7 +468,7 @@ const Dashboard = () => {
   };
 
   const sendConfirmationWhatsApp = (reservation: Reservation) => {
-    const message = `🎉 *RESERVA CONFIRMADA - Jon Tours and Adventure* 🎉
+    const message = `🎉 *RESERVA CONFIRMADA - Jon Tour Punta Cana* 🎉
 
 ¡Hola ${reservation.name}! ✨
 
@@ -437,7 +487,7 @@ Tu reserva ha sido confirmada exitosamente:
 
 ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_requests}\n\n` : ''}¡Estamos emocionados de tenerte en esta aventura! 🌴
 
-*Jon Tours and Adventure*
+*Jon Tour Punta Cana*
 +1 (809) 840-8257`;
 
     const phoneNumber = reservation.phone.replace(/[^\d]/g, '');
@@ -511,7 +561,7 @@ ${message.message}
 ¿En qué podemos ayudarte? 
 
 Saludos,
-Jon Tours and Adventure
+Jon Tour Punta Cana
 +1 (809) 840-8257`;
 
     const encodedMessage = encodeURIComponent(messageText);
@@ -576,6 +626,9 @@ Jon Tours and Adventure
         title: "Tour agregado",
         description: "El tour se ha agregado exitosamente",
       });
+
+      // Invalidar caché de tours
+      invalidateCache.tours();
 
       setShowAddPost(false);
       setNewPost({
@@ -669,6 +722,9 @@ Jon Tours and Adventure
         description: "El tour se ha actualizado exitosamente",
       });
 
+      // Invalidar caché de tours
+      invalidateCache.tours();
+
       setEditingPost(null);
       fetchData();
 
@@ -695,6 +751,9 @@ Jon Tours and Adventure
         title: "Tour eliminado",
         description: "El tour se ha eliminado exitosamente",
       });
+
+      // Invalidar caché de tours
+      invalidateCache.tours();
 
       fetchData();
 
@@ -741,6 +800,9 @@ Jon Tours and Adventure
         description: "La imagen adicional se ha agregado exitosamente",
       });
 
+      // Invalidar caché de imágenes de tours
+      invalidateCache.tourImages();
+
       // Refrescar los datos
       await fetchData();
 
@@ -785,6 +847,9 @@ Jon Tours and Adventure
         description: "La imagen se ha eliminado exitosamente",
       });
 
+      // Invalidar caché de imágenes de tours
+      invalidateCache.tourImages();
+
       fetchData();
 
     } catch (error) {
@@ -805,6 +870,9 @@ Jon Tours and Adventure
         .eq('id', imageId);
 
       if (error) throw error;
+
+      // Invalidar caché de imágenes de tours
+      invalidateCache.tourImages();
 
       fetchData();
 
@@ -964,7 +1032,7 @@ Jon Tours and Adventure
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Jon Tours Dashboard
+              Jon Tour Punta Cana Dashboard
             </CardTitle>
             <CardDescription>
               Ingresa la contraseña para acceder
@@ -1028,7 +1096,7 @@ Jon Tours and Adventure
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Dashboard - Jon Tours
+              Dashboard - Jon Tour Punta Cana
             </h1>
             <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
               <Button
@@ -1075,6 +1143,19 @@ Jon Tours and Adventure
               >
                 <Home className="w-4 h-4" />
                 Inicio
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  invalidateCache.all();
+                  toast({
+                    title: "Caché limpiado",
+                    description: "Todos los datos se actualizarán en la próxima visita",
+                  });
+                }}
+                className="text-sm"
+              >
+                Limpiar Caché
               </Button>
               <Button
                 variant="outline"

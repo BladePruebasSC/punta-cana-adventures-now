@@ -144,7 +144,7 @@ const Reservar = () => {
       });
 
       // Crear mensaje para WhatsApp con todos los datos
-      const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tours and Adventure* 🌴
+      const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tour Punta Cana* 🌴
 
 📋 *Detalles de la Reserva:*
 • Tour: ${tour?.title}
@@ -258,7 +258,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Jon Tours
+                  Jon Tour Punta Cana
                 </h1>
               </div>
             </div>

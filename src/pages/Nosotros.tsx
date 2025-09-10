@@ -64,7 +64,7 @@ const Nosotros = () => {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-lg sm:text-xl font-bold text-gray-900">Jon Tour & Adventure</span>
+              <span className="text-lg sm:text-xl font-bold text-gray-900">Jon Tour Punta Cana</span>
             </div>
             
             {/* Desktop Navigation */}
@@ -150,7 +150,7 @@ const Nosotros = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="order-2 lg:order-1">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Jon Tour & Adventure nace en el 2021
+                Jon Tour Punta Cana nace en el 2021
               </h3>
               <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
                 Como una empresa operadora especializada en ventas de productos vacacionales online 
@@ -333,7 +333,7 @@ const Nosotros = () => {
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-center space-x-2">
                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                  <span className="text-gray-700 text-sm sm:text-base break-all">Jonathanfrancoisg@gmail.com</span>
+                  <span className="text-gray-700 text-sm sm:text-base break-all">jontourpuntacana@gmail.com</span>
                 </div>
                 <div className="flex items-center justify-center space-x-2">
                   <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -395,7 +395,7 @@ const Nosotros = () => {
             <div className="flex flex-col items-center">
               <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2" />
               <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Escríbenos</h3>
-              <p className="text-gray-600 text-sm sm:text-base break-all">Jonathanfrancoisg@gmail.com</p>
+              <p className="text-gray-600 text-sm sm:text-base break-all">jfcaribe</p>
             </div>
             
             <div className="flex flex-col items-center">
@@ -433,12 +433,12 @@ const Nosotros = () => {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-lg sm:text-xl font-bold">Jon Tour & Adventure</span>
+              <span className="text-lg sm:text-xl font-bold">Jon Tour Punta Cana</span>
             </div>
             
             <div className="text-center md:text-right">
               <p className="text-gray-400 text-sm sm:text-base">
-                © 2024 Jon Tour & Adventure. Todos los derechos reservados.
+                © 2024 Jon Tour Punta Cana. Todos los derechos reservados.
               </p>
               <p className="text-gray-400 text-xs sm:text-sm">
                 Creando experiencias memorables en Punta Cana desde 2021

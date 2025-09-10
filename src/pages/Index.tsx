@@ -55,7 +55,7 @@ const translations = {
     corporateGroups: "Grupos Corporativos",
     transportation: "Transporte",
     certifiedGuides: "Guías Certificados",
-    copyright: "© 2024 Jon Tours and Adventure. Todos los derechos reservados.",
+    copyright: "© 2024 Jon Tour Punta Cana. Todos los derechos reservados.",
     authenticExperiences: "Experiencias Auténticas",
     saonaIsland: "Isla Saona",
     safariAdventure: "Safari Aventura",
@@ -96,7 +96,7 @@ const translations = {
     corporateGroups: "Corporate Groups",
     transportation: "Transportation",
     certifiedGuides: "Certified Guides",
-    copyright: "© 2024 Jon Tours and Adventure. All rights reserved.",
+    copyright: "© 2024 Jon Tour Punta Cana. All rights reserved.",
     authenticExperiences: "Authentic Experiences",
     saonaIsland: "Saona Island",
     safariAdventure: "Safari Adventure",
@@ -137,7 +137,7 @@ const translations = {
     corporateGroups: "Groupes d'Entreprise",
     transportation: "Transport",
     certifiedGuides: "Guides Certifiés",
-    copyright: "© 2024 Jon Tours and Adventure. Tous droits réservés.",
+    copyright: "© 2024 Jon Tour Punta Cana. Tous droits réservés.",
     authenticExperiences: "Expériences Authentiques",
     saonaIsland: "Île Saona",
     safariAdventure: "Safari Aventure",
@@ -212,8 +212,6 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [heroBackgroundImage] = useState('/src/assets/tour-saona-island.jpg');
-  const [heroImageLoaded] = useState(true); // Always true for static images
   
   const [keySequence, setKeySequence] = useState('');
   const [categories, setCategories] = useState<Category[]>([
@@ -271,7 +269,7 @@ const Index = () => {
             id: '3',
             title: 'Safari Aventura',
             description: 'Descubre la República Dominicana auténtica',
-            image_url: '/src/assets/tour-safari-adventure.jpg',
+
             price: 55,
             duration: '7 horas',
             rating: 4.7,
@@ -299,28 +297,7 @@ const Index = () => {
             if (toursError) throw toursError;
 
             if (toursData && toursData.length > 0) {
-              // Usar imágenes estáticas para tours reales y completar campos faltantes
-              const toursWithStaticImages = toursData.map((tour, index) => ({
-                ...tour,
-                image_url: basicTours[index % basicTours.length]?.image_url || '/src/assets/tour-saona-island.jpg',
-                rating: 4.8,
-                group_size: '2-20 personas',
-                highlights: basicTours[index % basicTours.length]?.highlights || ['Experiencia única', 'Guía profesional', 'Transporte incluido']
-              }));
-              
-              setTours(toursWithStaticImages);
-              toursCache.set(CACHE_KEYS.TOURS, toursWithStaticImages, CACHE_TTL.TOURS);
-              console.log('✅ Real tour data loaded and cached');
-            }
 
-            // Cargar configuraciones básicas del sitio (sin imágenes pesadas)
-            const { data: settingsData } = await supabase
-              .from('site_settings')
-              .select('setting_key, setting_value')
-              .neq('setting_key', 'hero_background_image'); // Evitar imágenes pesadas
-
-            if (settingsData) {
-              siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData, CACHE_TTL.SITE_SETTINGS);
             }
 
           } catch (error) {
@@ -412,13 +389,34 @@ const Index = () => {
     navigate(`/reservar/${tourId}`);
   }, [navigate]);
 
-  const handleTourClick = useCallback((tourId: string) => {
+  const handleTourClick = useCallback(async (tourId: string) => {
     const tour = tours.find(t => t.id === tourId);
     if (tour) {
       setSelectedTour(tour);
       setModalOpen(true);
+      
+      // Cargar imágenes específicas del tour si no están en caché
+      if (!tourImages[tourId] || tourImages[tourId].length === 0) {
+        try {
+          const { data: tourImagesData, error } = await supabase
+            .from('tour_images')
+            .select('*')
+            .eq('tour_id', tourId)
+            .order('order_index', { ascending: true })
+            .limit(10);
+
+          if (!error && tourImagesData && tourImagesData.length > 0) {
+            setTourImages(prev => ({
+              ...prev,
+              [tourId]: tourImagesData
+            }));
+          }
+        } catch (error) {
+          console.warn('Error loading tour images on demand:', error);
+        }
+      }
     }
-  }, [tours]);
+  }, [tours, tourImages]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
@@ -446,7 +444,7 @@ const Index = () => {
 
   const handleWhatsAppClick = () => {
     const phoneNumber = '18098408257';
-    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tours and Adventure* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
+    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tour Punta Cana* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
     
     // iOS-friendly WhatsApp redirect
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -465,7 +463,7 @@ const Index = () => {
   };
 
   const handleEmailClick = () => {
-    const email = 'info@jontours.com';
+    const email = 'jontourpuntacana@gmail.com';
     const subject = encodeURIComponent('Consulta sobre Tours en Punta Cana');
     const body = encodeURIComponent('Hola,\n\nMe interesa obtener más información sobre sus tours en Punta Cana.\n\nGracias');
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -497,7 +495,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  JON TOUR & ADVENTURE
+                  JON TOUR PUNTA CANA
                 </h1>
                 <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
               </div>
@@ -757,7 +755,7 @@ const Index = () => {
               className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
               onClick={handleEmailClick}
             >
-              Email: info@jontours.com
+              Email: jontourpuntacana@gmail.com
             </Button>
           </div>
         </div>
@@ -771,7 +769,7 @@ const Index = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold">Jon Tours and Adventure</span>
+              <span className="text-xl font-bold">Jon Tour Punta Cana</span>
             </div>
             <p className="text-gray-400">
               {currentLanguage === 'es' ? 'Tu compañía de confianza para explorar lo mejor de República Dominicana.' :
@@ -810,7 +808,7 @@ const Index = () => {
             </h4>
             <ul className="space-y-2 text-gray-400">
               <li>📱 +1 (809) 840-8257</li>
-              <li>✉️ info@jontours.com</li>
+              <li>✉️ jontourpuntacana@gmail.com</li>
               <li>🕒 {t.hours}</li>
             </ul>
           </div>
