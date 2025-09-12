@@ -67,13 +67,24 @@ export const uploadImage = async (
       throw new Error('El archivo debe ser menor a 10MB');
     }
 
-    // Intentar Supabase Storage primero
+    // Intentar Supabase Storage primero con timeout optimizado
     try {
       console.log('Subiendo imagen a Supabase Storage...');
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}-${file.name}`;
+      
+      // Crear un timeout más agresivo para Supabase Storage
+      const uploadPromise = supabase.storage
         .from(bucket)
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout de Supabase Storage')), 15000) // 15 segundos
+      );
+
+      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
 
       if (error) {
         throw error;
@@ -91,10 +102,16 @@ export const uploadImage = async (
     } catch (storageError) {
       console.warn('Error con Supabase Storage, intentando ImgBB como respaldo:', storageError);
       
-      // Intentar ImgBB como respaldo
+      // Intentar ImgBB como respaldo con timeout más corto
       try {
         console.log('Intentando subir a ImgBB...');
-        const imgbbUrl = await uploadToImgBB(file);
+        
+        const imgbbPromise = uploadToImgBB(file);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout de ImgBB')), 10000) // 10 segundos
+        );
+
+        const imgbbUrl = await Promise.race([imgbbPromise, timeoutPromise]) as string;
         console.log('Imagen subida exitosamente a ImgBB');
         return {
           url: imgbbUrl,
@@ -203,4 +220,58 @@ export const checkImageAccessibility = async (url: string): Promise<boolean> => 
     console.error('Error checking image accessibility:', error);
     return false;
   }
-}; 
+};
+
+// Función para cargar múltiples imágenes de forma optimizada
+export const uploadMultipleImages = async (
+  files: File[],
+  bucket: 'site-images' | 'tour-images' = 'site-images',
+  onProgress?: (completed: number, total: number) => void
+): Promise<UploadResult[]> => {
+  const results: UploadResult[] = [];
+  const batchSize = 3; // Procesar 3 imágenes a la vez
+  
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
+    
+    const batchPromises = batch.map(async (file) => {
+      try {
+        const result = await uploadImage(file, bucket);
+        return result;
+      } catch (error) {
+        console.error('Error uploading file:', file.name, error);
+        return {
+          url: '',
+          path: '',
+          error: error instanceof Error ? error.message : 'Error desconocido'
+        };
+      }
+    });
+    
+    const batchResults = await Promise.allSettled(batchPromises);
+    
+    batchResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+      } else {
+        results.push({
+          url: '',
+          path: '',
+          error: result.reason instanceof Error ? result.reason.message : 'Error desconocido'
+        });
+      }
+    });
+    
+    // Actualizar progreso
+    if (onProgress) {
+      onProgress(Math.min(i + batchSize, files.length), files.length);
+    }
+    
+    // Pequeña pausa entre lotes para no sobrecargar el servidor
+    if (i + batchSize < files.length) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  
+  return results;
+};
