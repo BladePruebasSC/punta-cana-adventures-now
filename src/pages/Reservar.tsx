@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X, MessageCircle } from 'lucide-react';
+import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X, MessageCircle, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 import RobustImage from '@/components/RobustImage';
+import PaymentMethodSelector from '@/components/PaymentMethodSelector';
+import PayPalPayment from '@/components/PayPalPayment';
 
 interface Tour {
   id: string;
@@ -46,6 +48,9 @@ const Reservar = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPaymentMethodSelector, setShowPaymentMethodSelector] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'whatsapp' | null>(null);
+  const [showPayPalForm, setShowPayPalForm] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -118,9 +123,39 @@ const Reservar = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar campos requeridos
+    if (!formData.name || !formData.email || !formData.phone || !formData.date) {
+      toast({
+        title: "Campos requeridos",
+        description: "Por favor completa todos los campos obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Mostrar selector de método de pago
+    setShowPaymentMethodSelector(true);
+  };
+
+  const handlePaymentMethodSelect = (method: 'paypal' | 'whatsapp') => {
+    setSelectedPaymentMethod(method);
+    setShowPaymentMethodSelector(false);
+    
+    if (method === 'paypal') {
+      setShowPayPalForm(true);
+    } else {
+      // Proceder con WhatsApp
+      handleWhatsAppReservation();
+    }
+  };
+
+  const handleWhatsAppReservation = async () => {
     setSubmitting(true);
 
     try {
+      const totalAmount = tour ? tour.price * parseInt(formData.guests) : 0;
+      
       const { error } = await supabase
         .from('reservations')
         .insert([
@@ -132,16 +167,14 @@ const Reservar = () => {
             date: formData.date,
             guests: parseInt(formData.guests),
             special_requests: formData.special_requests || null,
-            status: 'pending'
+            status: 'pending',
+            payment_method: 'whatsapp',
+            payment_status: 'pending',
+            total_amount: totalAmount
           }
         ]);
 
       if (error) throw error;
-
-      toast({
-        title: "¡Reserva exitosa!",
-        description: "Tu reserva ha sido enviada. Te contactaremos pronto para confirmar los detalles.",
-      });
 
       // Crear mensaje para WhatsApp con todos los datos
       const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tour Punta Cana* 🌴
@@ -153,7 +186,7 @@ const Reservar = () => {
 • Teléfono: ${formData.phone}
 • Fecha: ${formData.date}
 • Huéspedes: ${formData.guests}
-• Precio total: $${tour ? (tour.price * parseInt(formData.guests)).toFixed(2) : '0.00'}
+• Precio total: $${totalAmount.toFixed(2)}
 
 ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.special_requests}\n\n` : ''}¡Esperamos confirmar esta reserva pronto! 🎉`;
 
@@ -201,6 +234,94 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
     } finally {
       setSubmitting(false);
     }
+  };
+
+
+  const handlePayPalSuccess = async (paymentData: any) => {
+    setSubmitting(true);
+
+    try {
+      const totalAmount = tour ? tour.price * parseInt(formData.guests) : 0;
+      
+      // Crear reserva con pago exitoso
+      const { data: reservation, error: reservationError } = await supabase
+        .from('reservations')
+        .insert([
+          {
+            tour_id: tourId,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            date: formData.date,
+            guests: parseInt(formData.guests),
+            special_requests: formData.special_requests || null,
+            status: 'confirmed',
+            payment_method: 'paypal',
+            payment_status: 'paid',
+            total_amount: totalAmount
+          }
+        ])
+        .select()
+        .single();
+
+      if (reservationError) throw reservationError;
+
+      // Crear registro de pago
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert([
+          {
+            reservation_id: reservation.id,
+            payment_intent_id: paymentData.id,
+            amount: totalAmount,
+            currency: 'USD',
+            status: 'succeeded',
+            payment_method: 'paypal',
+            payment_type: 'full',
+            metadata: {
+              tour_title: tour?.title,
+              guest_name: formData.name,
+              guest_email: formData.email,
+              guest_phone: formData.phone,
+              tour_date: formData.date,
+              guest_count: formData.guests,
+              paypal_order_id: paymentData.id,
+              paypal_status: paymentData.status
+            }
+          }
+        ]);
+
+      if (paymentError) throw paymentError;
+
+      toast({
+        title: "¡Reserva confirmada!",
+        description: "Tu reserva ha sido pagada y confirmada exitosamente con PayPal.",
+      });
+
+      // Redirigir a página de confirmación
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error processing PayPal success:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema confirmando tu reserva. Contacta soporte.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePayPalError = (error: any) => {
+    console.error('PayPal error:', error);
+    toast({
+      title: "Error en el pago",
+      description: error.message || "Hubo un problema procesando tu pago con PayPal",
+      variant: "destructive",
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -572,26 +693,26 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       </>
                     ) : (
                       <>
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Confirmar y Contactar por WhatsApp
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Continuar con el Pago
                       </>
                     )}
                   </Button>
                   
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                     <div className="flex items-start space-x-2">
-                      <MessageCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-xs sm:text-sm text-green-800">
-                        <p className="font-medium mb-1">¿Cómo funciona?</p>
-                        <p>1. Completa el formulario y haz clic en "Confirmar"</p>
-                        <p>2. Se abrirá WhatsApp automáticamente con tu reserva</p>
-                        <p>3. Confirma los detalles y coordina el pago con nuestro equipo</p>
+                      <CreditCard className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs sm:text-sm text-blue-800">
+                        <p className="font-medium mb-1">Opciones de pago disponibles:</p>
+                        <p>• Pago con PayPal (sin cuenta necesaria)</p>
+                        <p>• Coordinación por WhatsApp (método tradicional)</p>
+                        <p>• Confirmación inmediata con pago en línea</p>
                       </div>
                     </div>
                   </div>
                   
                   <p className="text-xs sm:text-sm text-black text-center font-medium mt-3">
-                    * No se procesarán pagos digitales. El pago se coordinará directamente por WhatsApp.
+                    * Puedes elegir entre pago en línea (PayPal) o coordinar por WhatsApp
                   </p>
                 </form>
               </CardContent>
@@ -599,6 +720,71 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
           </div>
         </div>
       </div>
+
+      {/* Modal para selector de método de pago */}
+      {showPaymentMethodSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <PaymentMethodSelector
+                totalAmount={tour ? tour.price * parseInt(formData.guests) : 0}
+                onSelectMethod={handlePaymentMethodSelect}
+                tourTitle={tour?.title || ''}
+                guestCount={parseInt(formData.guests)}
+              />
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPaymentMethodSelector(false)}
+                  className="mr-2"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para formulario de PayPal */}
+      {showPayPalForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Pago con PayPal
+                </h2>
+                <p className="text-gray-600">
+                  Completa tu pago de forma segura con PayPal
+                </p>
+              </div>
+              
+              <PayPalPayment
+                amount={tour ? tour.price * parseInt(formData.guests) : 0}
+                currency="USD"
+                onPaymentSuccess={handlePayPalSuccess}
+                onPaymentError={handlePayPalError}
+                tourTitle={tour?.title || ''}
+                guestName={formData.name}
+                guestEmail={formData.email}
+              />
+              
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPayPalForm(false);
+                    setShowPaymentMethodSelector(true);
+                  }}
+                >
+                  Volver a opciones de pago
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -464,7 +464,7 @@ const Contacto = () => {
             <CardContent className="text-center space-y-4">
               <div className="flex items-center justify-center space-x-2">
                 <Mail className="w-4 h-4 text-blue-600" />
-                <span className="text-gray-700 break-all">jontourpuntacana@gmail.com</span>
+                <span className="text-gray-700 break-all">jontourpuntacana@gmail.com  </span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <Phone className="w-4 h-4 text-blue-600" />

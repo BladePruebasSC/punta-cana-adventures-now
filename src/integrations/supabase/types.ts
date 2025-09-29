@@ -103,10 +103,14 @@ export type Database = {
           guests: number
           id: string
           name: string
+          payment_method: string | null
+          payment_status: string | null
           phone: string
           special_requests: string | null
           status: string | null
+          total_amount: number | null
           tour_id: string | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -115,10 +119,14 @@ export type Database = {
           guests: number
           id?: string
           name: string
+          payment_method?: string | null
+          payment_status?: string | null
           phone: string
           special_requests?: string | null
           status?: string | null
+          total_amount?: number | null
           tour_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -127,10 +135,14 @@ export type Database = {
           guests?: number
           id?: string
           name?: string
+          payment_method?: string | null
+          payment_status?: string | null
           phone?: string
           special_requests?: string | null
           status?: string | null
+          total_amount?: number | null
           tour_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -165,6 +177,62 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          deposit_amount: number | null
+          id: string
+          metadata: Json | null
+          payment_intent_id: string | null
+          payment_method: string | null
+          payment_type: string | null
+          remaining_amount: number | null
+          reservation_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          deposit_amount?: number | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          payment_method?: string | null
+          payment_type?: string | null
+          remaining_amount?: number | null
+          reservation_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          deposit_amount?: number | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          payment_method?: string | null
+          payment_type?: string | null
+          remaining_amount?: number | null
+          reservation_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tour_images: {
         Row: {
