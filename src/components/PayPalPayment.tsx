@@ -25,7 +25,8 @@ const PayPalButtonsComponent: React.FC<{
   tourTitle: string;
   guestName: string;
   guestEmail: string;
-}> = ({ amount, currency, onPaymentSuccess, onPaymentError, tourTitle, guestName, guestEmail }) => {
+  paypalOptions: any;
+}> = ({ amount, currency, onPaymentSuccess, onPaymentError, tourTitle, guestName, guestEmail, paypalOptions }) => {
   const [{ isPending }] = usePayPalScriptReducer();
   const { toast } = useToast();
 
@@ -272,6 +273,7 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
             tourTitle={tourTitle}
             guestName={guestName}
             guestEmail={guestEmail}
+            paypalOptions={paypalOptions}
           />
         </PayPalScriptProvider>
       </div>
