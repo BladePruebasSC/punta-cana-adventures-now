@@ -156,6 +156,16 @@ const Reservar = () => {
     try {
       const totalAmount = tour ? tour.price * parseInt(formData.guests) : 0;
       
+      console.log('Creating WhatsApp reservation with data:', {
+        tour_id: tourId,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        date: formData.date,
+        guests: parseInt(formData.guests),
+        totalAmount
+      });
+      
       const { error } = await supabase
         .from('reservations')
         .insert([
@@ -174,7 +184,10 @@ const Reservar = () => {
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       // Crear mensaje para WhatsApp con todos los datos
       const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tour Punta Cana* 🌴
@@ -225,10 +238,10 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       }, 1500);
 
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      console.error('Error creating WhatsApp reservation:', error);
       toast({
         title: "Error",
-        description: "No se pudo procesar tu reserva. Inténtalo de nuevo.",
+        description: `No se pudo procesar tu reserva. Error: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     } finally {
