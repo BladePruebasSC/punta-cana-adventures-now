@@ -115,6 +115,25 @@ const PayPalButtonsComponent: React.FC<{
     );
   }
 
+  // Si no hay Client ID, mostrar error
+  if (!paypalOptions.clientId || paypalOptions.clientId === 'sandbox_client_id') {
+    return (
+      <div className="text-center p-8">
+        <div className="text-red-600 mb-4">
+          <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+          <h3 className="text-lg font-semibold">Error de configuración</h3>
+          <p className="text-sm">PayPal no está configurado correctamente</p>
+        </div>
+        <Button
+          onClick={() => window.location.reload()}
+          variant="outline"
+        >
+          Recargar página
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <PayPalButtons
       createOrder={createOrder}
@@ -145,11 +164,15 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
 
   // Configuración de PayPal
   const paypalOptions = {
-    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || 'sandbox_client_id',
+    clientId: 'AQBlrrU_qy8FrHs6jAB6Ej261iUjLWAyg4eb6dYhXKFXOAI_INaftOm-syu6pOSDS3HF3fPkmRly1hev',
     currency: currency.toUpperCase(),
     intent: 'capture' as const,
     components: 'buttons' as const,
   };
+
+  // Debug: Verificar que la variable se esté cargando
+  console.log('PayPal Client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
+  console.log('PayPal Options:', paypalOptions);
 
   const depositAmount = amount * 0.3;
   const finalAmount = paymentMethod === 'full' ? amount : depositAmount;
