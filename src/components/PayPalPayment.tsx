@@ -162,6 +162,9 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<'full' | 'deposit'>('full');
 
+  const depositAmount = amount * 0.3;
+  const finalAmount = paymentMethod === 'full' ? amount : depositAmount;
+
   // Configuración de PayPal
   const paypalOptions = {
     clientId: 'AQBlrrU_qy8FrHs6jAB6Ej261iUjLWAyg4eb6dYhXKFXOAI_INaftOm-syu6pOSDS3HF3fPkmRly1hev',
@@ -169,13 +172,6 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
     intent: 'capture' as const,
     components: 'buttons' as const,
   };
-
-  // Debug: Verificar que la variable se esté cargando
-  console.log('PayPal Client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
-  console.log('PayPal Options:', paypalOptions);
-
-  const depositAmount = amount * 0.3;
-  const finalAmount = paymentMethod === 'full' ? amount : depositAmount;
 
   return (
     <div className="space-y-6">
