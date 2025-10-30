@@ -1093,55 +1093,69 @@ Jon Tour Punta Cana
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
       <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+          <div className="flex flex-col space-y-4">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent text-center sm:text-left">
               Dashboard - Jon Tour Punta Cana
             </h1>
-            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+            
+            {/* Navegación principal - Ultra optimizada para móvil */}
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
               <Button
                 variant={activeTab === 'reservations' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('reservations')}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                Reservas ({reservations.length})
+                <span className="hidden sm:inline">Reservas</span>
+                <span className="sm:hidden">Res.</span>
+                <span className="ml-1">({reservations.length})</span>
               </Button>
               <Button
                 variant={activeTab === 'messages' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('messages')}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                Mensajes ({contactMessages.length})
+                <span className="hidden sm:inline">Mensajes</span>
+                <span className="sm:hidden">Msg.</span>
+                <span className="ml-1">({contactMessages.length})</span>
               </Button>
               <Button
                 variant={activeTab === 'posts' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('posts')}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                Tours ({posts.length})
+                <span className="hidden sm:inline">Tours</span>
+                <span className="sm:hidden">Tours</span>
+                <span className="ml-1">({posts.length})</span>
               </Button>
               <Button
                 variant={activeTab === 'settings' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('settings')}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                <Settings className="w-4 h-4 mr-2" />
-                Configuración
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Configuración</span>
+                <span className="sm:hidden">Config</span>
               </Button>
               <Button
                 variant={activeTab === 'nosotros' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('nosotros')}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Página Nosotros
+                <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Página Nosotros</span>
+                <span className="sm:hidden">Nosotros</span>
               </Button>
+            </div>
+            
+            {/* Botones de acción - Ultra optimizados para móvil */}
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
               <Button
                 variant="outline"
                 onClick={() => navigate('/')}
-                className="text-sm flex items-center gap-2"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                <Home className="w-4 h-4" />
+                <Home className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Inicio
               </Button>
               <Button
@@ -1153,9 +1167,10 @@ Jon Tour Punta Cana
                     description: "Todos los datos se actualizarán en la próxima visita",
                   });
                 }}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                Limpiar Caché
+                <span className="hidden sm:inline">Limpiar Caché</span>
+                <span className="sm:hidden">Limpiar</span>
               </Button>
               <Button
                 variant="outline"
@@ -1163,9 +1178,10 @@ Jon Tour Punta Cana
                   setIsAuthenticated(false);
                   setPassword('');
                 }}
-                className="text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
-                Cerrar Sesión
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+                <span className="sm:hidden">Salir</span>
               </Button>
             </div>
           </div>

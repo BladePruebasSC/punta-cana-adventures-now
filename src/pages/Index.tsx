@@ -508,16 +508,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50">
-      {/* Header */}
+      {/* Header - Optimizado para móviles */}
       <header className="bg-white/95 backdrop-blur-sm shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <div className="flex justify-between items-center py-2 sm:py-3">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent truncate">
                   JON TOUR PUNTA CANA
                 </h1>
                 <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
@@ -525,25 +525,26 @@ const Index = () => {
             </div>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-6">
-              <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors">Tours</a>
+            <nav className="hidden lg:flex space-x-4 xl:space-x-6">
+              <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Tours</a>
               <button 
                 onClick={() => {
                   const element = document.getElementById('transportation');
                   element?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="text-gray-700 hover:text-blue-600 transition-colors"
+                className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base"
               >
                 Transporte
               </button>
-              <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors">Nosotros</a>
-              <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors">Contacto</a>
+              <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Nosotros</a>
+              <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Contacto</a>
             </nav>
 
             {/* Mobile Menu Button */}
             <button 
-              className="md:hidden p-2"
+              className="lg:hidden p-2 ml-2 flex-shrink-0"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Abrir menú"
             >
               {mobileMenuOpen ? (
                 <X className="w-5 h-5 text-gray-700" />
@@ -553,13 +554,13 @@ const Index = () => {
             </button>
           </div>
 
-          {/* Mobile Navigation Menu */}
+          {/* Mobile Navigation Menu - Mejorado */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-3">
-              <nav className="flex flex-col space-y-3">
+            <div className="lg:hidden border-t border-gray-200 py-3 bg-white/98 backdrop-blur-sm">
+              <nav className="flex flex-col space-y-1">
                 <a 
                   href="#tours" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
+                  className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Tours
@@ -570,20 +571,20 @@ const Index = () => {
                     element?.scrollIntoView({ behavior: 'smooth' });
                     setMobileMenuOpen(false);
                   }}
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2 text-left w-full"
+                  className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-left w-full text-base font-medium"
                 >
                   Transporte
                 </button>
                 <a 
                   href="/nosotros" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
+                  className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Nosotros
                 </a>
                 <a 
                   href="/contacto" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors px-2 py-2"
+                  className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Contacto
@@ -594,8 +595,8 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative min-h-[400px] md:h-[600px] flex items-center justify-center overflow-hidden">
+      {/* Hero Section - Optimizado para móviles */}
+      <section className="relative min-h-[500px] sm:min-h-[600px] md:h-[700px] flex items-center justify-center overflow-hidden">
         {/* Hero Background Image - Always visible */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -603,32 +604,30 @@ const Index = () => {
             backgroundImage: `url(${heroBackgroundImage || '/782c7fc03c4090680af502d3a7795f1d.webp'})`
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-emerald-900/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/50 to-emerald-900/40"></div>
         </div>
         
-        {/* No loading indicators needed - static image loads instantly */}
-        
-        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 animate-fade-in hero-title-shadow leading-tight">
+        <div className="relative z-10 text-center text-white px-3 sm:px-4 max-w-5xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 sm:mb-4 md:mb-6 animate-fade-in hero-title-shadow leading-tight px-2">
             {t.heroTitle}
           </h2>
-          <p className="text-base sm:text-lg md:text-2xl mb-4 md:mb-8 animate-fade-in opacity-90 px-2">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-4 sm:mb-6 md:mb-8 animate-fade-in opacity-90 px-2 leading-relaxed">
             {t.heroSubtitle.split('•').map((part, index, array) => (
               <span key={index}>
                 {part.trim()}
                 {index < array.length - 1 && (
-                  <span className="text-yellow-300 mx-1 md:mx-2 font-bold text-lg md:text-2xl drop-shadow-lg">•</span>
+                  <span className="text-yellow-300 mx-1 sm:mx-2 font-bold text-base sm:text-lg md:text-xl lg:text-2xl drop-shadow-lg">•</span>
                 )}
               </span>
             ))}
           </p>
           
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 justify-center items-center mb-4 w-full max-w-sm mx-auto">
+          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:gap-4 justify-center items-center mb-4 sm:mb-6 w-full max-w-md sm:max-w-lg mx-auto">
             <div className="relative w-full">
               <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
               <Input 
                 placeholder={t.searchPlaceholder} 
-                className="pl-10 h-11 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 text-sm"
+                className="pl-10 h-12 sm:h-14 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-white/70 text-sm sm:text-base rounded-lg"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
@@ -636,44 +635,44 @@ const Index = () => {
             <Button 
               type="submit"
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-11 px-6 w-full text-sm"
+              className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 h-12 sm:h-14 px-6 sm:px-8 w-full text-sm sm:text-base font-semibold rounded-lg shadow-lg"
             >
               {t.exploreButton}
             </Button>
           </form>
 
-          <div className="flex flex-wrap justify-center gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-              <Star className="w-3 h-3 text-yellow-400" />
-              <span>{t.reviews}</span>
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
+              <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
+              <span className="font-medium">{t.reviews}</span>
             </div>
-            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-              <Users className="w-3 h-3" />
-              <span>{t.smallGroups}</span>
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="font-medium">{t.smallGroups}</span>
             </div>
-            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-              <MapPin className="w-3 h-3" />
-              <span>{t.localGuides}</span>
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="font-medium">{t.localGuides}</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Tours Section */}
-      <section id="tours" className="py-6 md:py-16 px-4 max-w-7xl mx-auto">
-        <div className="text-center mb-6 md:mb-12">
-          <h3 className="text-xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
+      {/* Tours Section - Optimizado para móviles */}
+      <section id="tours" className="py-8 sm:py-12 md:py-16 px-3 sm:px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8 md:mb-12">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6">
             {t.featuredTours}
           </h3>
-          <p className="text-sm md:text-xl text-gray-600 max-w-2xl mx-auto px-2">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-2 leading-relaxed">
             {t.featuredSubtitle}
           </p>
         </div>
 
-        {/* Search Results Info */}
+        {/* Search Results Info - Mejorado para móviles */}
         {searchTerm && (
-          <div className="mb-6 text-center">
-            <p className="text-gray-600">
+          <div className="mb-6 sm:mb-8 text-center">
+            <p className="text-gray-600 text-sm sm:text-base mb-3">
               {filteredTours.length > 0 
                 ? `${filteredTours.length} ${t.toursFound} "${searchTerm}"`
                 : `${t.noToursFound} "${searchTerm}"`
@@ -684,7 +683,7 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setSearchTerm('')}
-                className="mt-2"
+                className="text-xs sm:text-sm"
               >
                 {t.clearSearch}
               </Button>
@@ -692,35 +691,36 @@ const Index = () => {
           </div>
         )}
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-2 mb-4 md:mb-10 px-2">
+        {/* Category Filters - Optimizado para móviles */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 md:mb-10 px-2">
           {categories.map((category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               onClick={() => setSelectedCategory(category.id)}
-              className={`rounded-full text-xs md:text-base h-8 md:h-10 ${
+              className={`rounded-full text-xs sm:text-sm md:text-base h-8 sm:h-9 md:h-10 px-3 sm:px-4 ${
                 selectedCategory === category.id 
-                  ? 'bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700' 
-                  : 'hover:bg-blue-50'
+                  ? 'bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white' 
+                  : 'hover:bg-blue-50 border-gray-300'
               }`}
             >
-              {category.name}
-              <Badge variant="secondary" className="ml-1 text-xs">
+              <span className="whitespace-nowrap">{category.name}</span>
+              <Badge variant="secondary" className="ml-1 text-xs bg-white/20 text-white">
                 {category.count}
               </Badge>
             </Button>
           ))}
         </div>
 
-        {/* Tours Grid */}
+        {/* Tours Grid - Optimizado para móviles */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">{t.loadingTours}</p>
+          <div className="text-center py-12 sm:py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-sm sm:text-base">{t.loadingTours}</p>
           </div>
         ) : filteredTours.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg mb-4">
+          <div className="text-center py-12 sm:py-16">
+            <p className="text-gray-600 text-base sm:text-lg mb-4 px-4">
               {searchTerm ? t.noToursSearch : t.noToursCategory}
             </p>
             {(searchTerm || selectedCategory !== 'todos') && (
@@ -729,14 +729,14 @@ const Index = () => {
                   setSearchTerm('');
                   setSelectedCategory('todos');
                 }}
-                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base"
               >
                 {t.viewAllTours}
               </Button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
             {filteredTours.map((tour) => (
               <TourCard
                 key={tour.id}
@@ -755,90 +755,103 @@ const Index = () => {
           <TransportationSection />
         </section>
 
-        {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-6 md:py-16 px-4">
+        {/* CTA Section - Optimizado para móviles */}
+      <section className="bg-gradient-to-r from-blue-600 to-emerald-600 py-8 sm:py-12 md:py-16 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto text-center text-white">
-          <h3 className="text-xl md:text-4xl font-bold mb-2 md:mb-4">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 md:mb-6 leading-tight">
             {t.readyForAdventure}
           </h3>
-          <p className="text-sm md:text-xl mb-4 md:mb-8 opacity-90 px-2">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 opacity-90 px-2 leading-relaxed">
             {t.contactExperts}
           </p>
-          <div className="flex flex-col gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-lg mx-auto">
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
+              className="bg-white text-blue-600 hover:bg-gray-100 text-sm sm:text-base h-12 sm:h-14 font-semibold rounded-lg shadow-lg flex-1"
               onClick={handleWhatsAppClick}
             >
-              <WhatsAppIcon className="w-4 h-4 mr-2" />
-              WhatsApp +1 (809) 840-8257
+              <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span className="hidden sm:inline">WhatsApp +1 (809) 840-8257</span>
+              <span className="sm:hidden">WhatsApp</span>
             </Button>
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100 text-sm h-11"
+              className="bg-white text-blue-600 hover:bg-gray-100 text-sm sm:text-base h-12 sm:h-14 font-semibold rounded-lg shadow-lg flex-1"
               onClick={handleEmailClick}
             >
-              Email: jontourpuntacana@gmail.com
+              <span className="hidden sm:inline">Email: jontourpuntacana@gmail.com</span>
+              <span className="sm:hidden">Email</span>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-6 md:py-12 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-white" />
+      {/* Footer - Optimizado para móviles */}
+      <footer className="bg-gray-900 text-white py-8 sm:py-10 md:py-12 px-3 sm:px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <span className="text-lg sm:text-xl font-bold">Jon Tour Punta Cana</span>
               </div>
-              <span className="text-xl font-bold">Jon Tour Punta Cana</span>
+              <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
+                {currentLanguage === 'es' ? 'Tu compañía de confianza para explorar lo mejor de República Dominicana.' :
+                 currentLanguage === 'en' ? 'Your trusted company to explore the best of the Dominican Republic.' :
+                 'Votre entreprise de confiance pour explorer le meilleur de la République dominicaine.'}
+              </p>
             </div>
-            <p className="text-gray-400">
-              {currentLanguage === 'es' ? 'Tu compañía de confianza para explorar lo mejor de República Dominicana.' :
-               currentLanguage === 'en' ? 'Your trusted company to explore the best of the Dominican Republic.' :
-               'Votre entreprise de confiance pour explorer le meilleur de la République dominicaine.'}
-            </p>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-base sm:text-lg">
+                {t.popularTours}
+              </h4>
+              <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
+                <li className="hover:text-white transition-colors cursor-pointer">{t.saonaIsland}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.safariAdventure}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.blueHole}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.santoDomingo}</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-base sm:text-lg">
+                {t.services}
+              </h4>
+              <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
+                <li className="hover:text-white transition-colors cursor-pointer">{t.privateTours}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.corporateGroups}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.transportation}</li>
+                <li className="hover:text-white transition-colors cursor-pointer">{t.certifiedGuides}</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 text-base sm:text-lg">
+                {t.contact}
+              </h4>
+              <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
+                <li className="flex items-center space-x-2 hover:text-white transition-colors cursor-pointer">
+                  <span>📱</span>
+                  <span>+1 (809) 840-8257</span>
+                </li>
+                <li className="flex items-center space-x-2 hover:text-white transition-colors cursor-pointer">
+                  <span>✉️</span>
+                  <span className="break-all">jontourpuntacana@gmail.com</span>
+                </li>
+                <li className="flex items-center space-x-2 hover:text-white transition-colors cursor-pointer">
+                  <span>🕒</span>
+                  <span>{t.hours}</span>
+                </li>
+              </ul>
+            </div>
           </div>
           
-          <div>
-            <h4 className="font-semibold mb-4">
-              {t.popularTours}
-            </h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>{t.saonaIsland}</li>
-              <li>{t.safariAdventure}</li>
-              <li>{t.blueHole}</li>
-              <li>{t.santoDomingo}</li>
-            </ul>
+          <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-gray-700 text-center text-gray-400">
+            <p className="text-xs sm:text-sm">{t.copyright}</p>
           </div>
-          
-          <div>
-            <h4 className="font-semibold mb-4">
-              {t.services}
-            </h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>{t.privateTours}</li>
-              <li>{t.corporateGroups}</li>
-              <li>{t.transportation}</li>
-              <li>{t.certifiedGuides}</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold mb-4">
-              {t.contact}
-            </h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>📱 +1 (809) 840-8257</li>
-              <li>✉️ jontourpuntacana@gmail.com</li>
-              <li>🕒 {t.hours}</li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
-          <p>{t.copyright}</p>
         </div>
       </footer>
 

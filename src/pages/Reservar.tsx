@@ -450,11 +450,11 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {/* Información del Tour - Optimizado para móvil */}
+          {/* Información del Tour - Ultra optimizado para móvil */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-xl shadow-lg">
               <div className="relative">
                 {tourImages.length > 0 ? (
                   <Carousel className="w-full">
@@ -465,7 +465,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                             <RobustImage 
                               src={image.image_url} 
                               alt={image.alt_text || tour.title}
-                              className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover bg-gray-100"
+                              className="w-full h-56 sm:h-64 md:h-72 lg:h-80 xl:h-96 object-cover bg-gray-100"
                               onError={(errorUrl) => {
                                 console.error('Error loading tour image:', errorUrl);
                               }}
@@ -476,8 +476,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     </CarouselContent>
                     {tourImages.length > 1 && (
                       <>
-                        <CarouselPrevious className="left-2 h-8 w-8 sm:h-10 sm:w-10" />
-                        <CarouselNext className="right-2 h-8 w-8 sm:h-10 sm:w-10" />
+                        <CarouselPrevious className="left-2 h-8 w-8 sm:h-10 sm:w-10 bg-white/80 hover:bg-white" />
+                        <CarouselNext className="right-2 h-8 w-8 sm:h-10 sm:w-10 bg-white/80 hover:bg-white" />
                       </>
                     )}
                   </Carousel>
@@ -486,7 +486,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     <RobustImage 
                       src={tour.image_url} 
                       alt={tour.title}
-                      className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover bg-gray-100"
+                      className="w-full h-56 sm:h-64 md:h-72 lg:h-80 xl:h-96 object-cover bg-gray-100"
                       onError={(errorUrl) => {
                         console.error('Error loading tour image:', errorUrl);
                       }}
@@ -494,54 +494,54 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                 )}
                 
-                {/* Badges optimizados para móvil */}
-                <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
-                  <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm sm:text-lg px-2 sm:px-3 py-1">
+                {/* Badges ultra optimizados para móvil */}
+                <div className="absolute top-3 sm:top-4 right-3 sm:right-4">
+                  <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm sm:text-base lg:text-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-lg font-semibold">
                     ${tour.price}
                   </Badge>
                 </div>
-                <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
-                  <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 sm:px-3 py-1">
+                <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
+                  <div className="flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-lg">
                     <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 fill-current" />
-                    <span className="font-medium text-sm sm:text-base">{tour.rating}</span>
+                    <span className="font-semibold text-sm sm:text-base">{tour.rating}</span>
                   </div>
                 </div>
               </div>
               
-              <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="text-lg sm:text-xl lg:text-2xl leading-tight">{tour.title}</CardTitle>
-                <CardDescription className="text-sm sm:text-base text-black font-medium leading-relaxed mt-2">
+              <CardHeader className="p-4 sm:p-5 md:p-6">
+                <CardTitle className="text-xl sm:text-2xl lg:text-3xl leading-tight font-bold">{tour.title}</CardTitle>
+                <CardDescription className="text-sm sm:text-base lg:text-lg text-gray-700 font-medium leading-relaxed mt-2">
                   {tour.description}
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="p-4 sm:p-6 space-y-4">
-                {/* Información del tour optimizada */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex items-center gap-2 text-black font-medium text-sm sm:text-base">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <CardContent className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5">
+                {/* Información del tour ultra optimizada */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 text-gray-700 font-semibold text-sm sm:text-base bg-gray-50 p-3 rounded-lg">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-blue-600" />
                     <span>{tour.duration}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-black font-medium text-sm sm:text-base">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-700 font-semibold text-sm sm:text-base bg-gray-50 p-3 rounded-lg">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-green-600" />
                     <span>{tour.group_size}</span>
                   </div>
                 </div>
                 
-                {/* Highlights optimizados */}
+                {/* Highlights ultra optimizados */}
                 <div>
-                  <h4 className="font-semibold mb-2 text-black text-sm sm:text-base">Lo que incluye:</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <h4 className="font-bold mb-3 text-gray-900 text-base sm:text-lg">Lo que incluye:</h4>
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
                     {tour.highlights.map((highlight, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
+                      <Badge key={index} variant="secondary" className="text-xs sm:text-sm bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 font-medium">
                         {highlight}
                       </Badge>
                     ))}
                   </div>
                 </div>
 
-                {/* Botón WhatsApp optimizado */}
-                <div className="flex gap-2 pt-2">
+                {/* Botón WhatsApp ultra optimizado */}
+                <div className="flex gap-2 sm:gap-3 pt-2">
                   <Button 
                     onClick={() => sendWhatsAppMessage({
                       title: tour.title,
@@ -551,16 +551,16 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       highlights: tour.highlights
                     })}
                     variant="outline"
-                    className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 text-sm sm:text-base flex-1 sm:flex-none"
+                    className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 text-sm sm:text-base flex-1 sm:flex-none h-11 sm:h-12 font-semibold rounded-lg"
                   >
-                    <WhatsAppIcon className="w-4 h-4 mr-2" />
+                    <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     <span className="hidden sm:inline">Contáctame por WhatsApp</span>
                     <span className="sm:hidden">WhatsApp</span>
                   </Button>
                 </div>
 
                 {tourImages.length > 1 && (
-                  <div className="text-xs sm:text-sm text-black text-center font-medium">
+                  <div className="text-xs sm:text-sm text-gray-600 text-center font-medium bg-gray-50 p-2 rounded-lg">
                     📸 {tourImages.length} fotos disponibles - Usa las flechas para ver más
                   </div>
                 )}
@@ -568,25 +568,25 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
             </Card>
           </div>
 
-          {/* Formulario de Reserva - Optimizado para móvil */}
+          {/* Formulario de Reserva - Ultra optimizado para móvil */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-20 lg:top-24">
-              <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-black text-lg sm:text-xl">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Card className="sticky top-20 lg:top-24 rounded-xl shadow-lg">
+              <CardHeader className="p-4 sm:p-5 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   Reservar este Tour
                 </CardTitle>
-                <CardDescription className="text-black font-medium text-sm sm:text-base">
+                <CardDescription className="text-gray-600 font-medium text-sm sm:text-base">
                   Completa el formulario para reservar tu aventura
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="p-4 sm:p-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Campos del formulario optimizados */}
-                  <div className="space-y-4">
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                  {/* Campos del formulario ultra optimizados */}
+                  <div className="space-y-4 sm:space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-black font-semibold text-sm sm:text-base">Nombre Completo *</Label>
+                      <Label htmlFor="name" className="text-gray-900 font-bold text-sm sm:text-base">Nombre Completo *</Label>
                       <Input
                         id="name"
                         name="name"
@@ -594,12 +594,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="Tu nombre completo"
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-black font-semibold text-sm sm:text-base">Email *</Label>
+                      <Label htmlFor="email" className="text-gray-900 font-bold text-sm sm:text-base">Email *</Label>
                       <Input
                         id="email"
                         name="email"
@@ -608,14 +608,14 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="tu@email.com"
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-black font-semibold text-sm sm:text-base">Teléfono *</Label>
+                      <Label htmlFor="phone" className="text-gray-900 font-bold text-sm sm:text-base">Teléfono *</Label>
                       <Input
                         id="phone"
                         name="phone"
@@ -624,12 +624,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         onChange={handleInputChange}
                         required
                         placeholder="+1 (809) 840-8257"
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="guests" className="text-black font-semibold text-sm sm:text-base">Huéspedes *</Label>
+                      <Label htmlFor="guests" className="text-gray-900 font-bold text-sm sm:text-base">Huéspedes *</Label>
                       <Input
                         id="guests"
                         name="guests"
@@ -639,13 +639,13 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         value={formData.guests}
                         onChange={handleInputChange}
                         required
-                        className="text-sm sm:text-base"
+                        className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date" className="text-black font-semibold text-sm sm:text-base">Fecha Preferida *</Label>
+                    <Label htmlFor="date" className="text-gray-900 font-bold text-sm sm:text-base">Fecha Preferida *</Label>
                     <Input
                       id="date"
                       name="date"
@@ -654,12 +654,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       onChange={handleInputChange}
                       required
                       min={new Date().toISOString().split('T')[0]}
-                      className="text-sm sm:text-base"
+                      className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="special_requests" className="text-black font-semibold text-sm sm:text-base">Solicitudes Especiales</Label>
+                    <Label htmlFor="special_requests" className="text-gray-900 font-bold text-sm sm:text-base">Solicitudes Especiales</Label>
                     <Textarea
                       id="special_requests"
                       name="special_requests"
@@ -667,64 +667,66 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       onChange={handleInputChange}
                       placeholder="Alguna solicitud especial, restricciones alimentarias, etc."
                       rows={3}
-                      className="text-sm sm:text-base"
+                      className="text-sm sm:text-base rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   
-                  {/* Resumen optimizado */}
-                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Resumen de la Reserva</h4>
-                    <div className="space-y-1 text-xs sm:text-sm text-blue-800">
-                      <div className="flex justify-between">
-                        <span>Tour:</span>
-                        <span className="text-right max-w-[60%]">{tour.title}</span>
+                  {/* Resumen ultra optimizado */}
+                  <div className="bg-gradient-to-r from-blue-50 to-emerald-50 p-4 sm:p-5 rounded-xl border border-blue-200">
+                    <h4 className="font-bold text-blue-900 mb-3 text-sm sm:text-base">Resumen de la Reserva</h4>
+                    <div className="space-y-2 text-xs sm:text-sm text-blue-800">
+                      <div className="flex justify-between items-start">
+                        <span className="font-medium">Tour:</span>
+                        <span className="text-right max-w-[60%] font-semibold">{tour.title}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Precio por persona:</span>
-                        <span>${tour.price}</span>
+                        <span className="font-medium">Precio por persona:</span>
+                        <span className="font-semibold">${tour.price}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Huéspedes:</span>
-                        <span>{formData.guests}</span>
+                        <span className="font-medium">Huéspedes:</span>
+                        <span className="font-semibold">{formData.guests}</span>
                       </div>
-                      <div className="flex justify-between font-semibold border-t border-blue-200 pt-2">
+                      <div className="flex justify-between font-bold border-t border-blue-300 pt-2 text-sm sm:text-base">
                         <span>Total estimado:</span>
-                        <span>${(tour.price * parseInt(formData.guests || '1')).toFixed(2)}</span>
+                        <span className="text-blue-900">${(tour.price * parseInt(formData.guests || '1')).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base py-3"
+                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base py-3 sm:py-4 h-12 sm:h-14 font-bold rounded-lg shadow-lg"
                     disabled={submitting}
                   >
                     {submitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
                         Procesando...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="w-4 h-4 mr-2" />
+                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         Continuar con el Pago
                       </>
                     )}
                   </Button>
                   
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4">
                     <div className="flex items-start space-x-2">
-                      <CreditCard className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="text-xs sm:text-sm text-blue-800">
-                        <p className="font-medium mb-1">Opciones de pago disponibles:</p>
-                        <p>• Pago con PayPal (sin cuenta necesaria)</p>
-                        <p>• Coordinación por WhatsApp (método tradicional)</p>
-                        <p>• Confirmación inmediata con pago en línea</p>
+                        <p className="font-bold mb-2">Opciones de pago disponibles:</p>
+                        <ul className="space-y-1">
+                          <li>• Pago con PayPal (sin cuenta necesaria)</li>
+                          <li>• Coordinación por WhatsApp (método tradicional)</li>
+                          <li>• Confirmación inmediata con pago en línea</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-black text-center font-medium mt-3">
+                  <p className="text-xs sm:text-sm text-gray-600 text-center font-medium mt-3">
                     * Puedes elegir entre pago en línea (PayPal) o coordinar por WhatsApp
                   </p>
                 </form>
@@ -734,22 +736,22 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
         </div>
       </div>
 
-      {/* Modal para selector de método de pago */}
+      {/* Modal para selector de método de pago - Ultra optimizado para móvil */}
       {showPaymentMethodSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-4 sm:p-6">
               <PaymentMethodSelector
                 totalAmount={tour ? tour.price * parseInt(formData.guests) : 0}
                 onSelectMethod={handlePaymentMethodSelect}
                 tourTitle={tour?.title || ''}
                 guestCount={parseInt(formData.guests)}
               />
-              <div className="mt-6 text-center">
+              <div className="mt-4 sm:mt-6 text-center">
                 <Button
                   variant="outline"
                   onClick={() => setShowPaymentMethodSelector(false)}
-                  className="mr-2"
+                  className="w-full sm:w-auto text-sm sm:text-base h-10 sm:h-11 rounded-lg"
                 >
                   Cancelar
                 </Button>
@@ -761,14 +763,14 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
 
       {/* Modal para formulario de PayPal */}
       {showPayPalForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                   Pago con PayPal
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Completa tu pago de forma segura con PayPal
                 </p>
               </div>
@@ -783,13 +785,14 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 guestEmail={formData.email}
               />
               
-              <div className="mt-6 text-center">
+              <div className="mt-4 sm:mt-6 text-center">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowPayPalForm(false);
                     setShowPaymentMethodSelector(true);
                   }}
+                  className="w-full sm:w-auto text-sm sm:text-base h-10 sm:h-11 rounded-lg"
                 >
                   Volver a opciones de pago
                 </Button>
