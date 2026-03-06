@@ -230,7 +230,7 @@ const Dashboard = () => {
           console.log('📡 Loading additional data (posts, images, settings)...');
           
           const [postsResponse, settingsResponse] = await Promise.all([
-            supabase.from('posts').select('*').order('created_at', { ascending: false }),
+            supabase.from('posts').select('*').order('display_order', { ascending: true }).order('created_at', { ascending: false }),
             supabase.from('site_settings').select('*').order('created_at', { ascending: false })
           ]);
 
@@ -586,9 +586,9 @@ Jon Tours Punta Cana
 
   const handleAddPost = async () => {
     try {
-      // TEMPORALMENTE COMENTADO: Requiere la columna display_order
-      // const maxOrder = posts.length > 0 ? Math.max(...posts.map(p => p.display_order || 0)) : 0;
-      // const nextOrder = maxOrder + 1;
+      // Obtener el siguiente display_order
+      const maxOrder = posts.length > 0 ? Math.max(...posts.map(p => p.display_order || 0)) : 0;
+      const nextOrder = maxOrder + 1;
 
       // Insertar el tour en posts
       const { data: postData, error: postError } = await supabase
@@ -603,7 +603,7 @@ Jon Tours Punta Cana
           category: newPost.category,
           group_size: newPost.group_size,
           highlights: newPost.highlights.filter(h => h.trim() !== ''),
-          // display_order: nextOrder // TEMPORALMENTE COMENTADO
+          display_order: nextOrder
         }])
         .select()
         .single();
@@ -774,12 +774,6 @@ Jon Tours Punta Cana
   };
 
   const moveTourUp = async (tourId: string, currentOrder: number) => {
-    toast({
-      title: "Función deshabilitada",
-      description: "Por favor aplica la migración de base de datos para usar esta función",
-      variant: "destructive",
-    });
-    /* TEMPORALMENTE DESHABILITADO - Necesita la columna display_order
     try {
       // Encontrar el tour anterior (con display_order menor)
       const tourAbove = posts
@@ -824,16 +818,9 @@ Jon Tours Punta Cana
         variant: "destructive",
       });
     }
-    */
   };
 
   const moveTourDown = async (tourId: string, currentOrder: number) => {
-    toast({
-      title: "Función deshabilitada",
-      description: "Por favor aplica la migración de base de datos para usar esta función",
-      variant: "destructive",
-    });
-    /* TEMPORALMENTE DESHABILITADO - Necesita la columna display_order
     try {
       // Encontrar el tour siguiente (con display_order mayor)
       const tourBelow = posts
@@ -878,7 +865,6 @@ Jon Tours Punta Cana
         variant: "destructive",
       });
     }
-    */
   };
 
   const handleAddTourImage = async (tourId: string, imageUrl: string, altText: string) => {

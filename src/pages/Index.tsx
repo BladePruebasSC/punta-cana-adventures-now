@@ -294,7 +294,8 @@ const Index = () => {
             // Cargar los tours desde la base de datos
             const { data: toursData, error: toursError } = await supabase
               .from('posts')
-              .select('id, title, description, price, duration, category, image_url, rating, group_size, highlights')
+              .select('id, title, description, price, duration, category, image_url, rating, group_size, highlights, display_order')
+              .order('display_order', { ascending: true })
               .order('created_at', { ascending: false });
 
             if (toursError) {
