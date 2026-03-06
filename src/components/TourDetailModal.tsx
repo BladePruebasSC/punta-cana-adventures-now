@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Tour {
   id: string;
@@ -34,7 +35,6 @@ interface TourDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReserve: (tourId: string) => void;
-  reserveText: string;
 }
 
 const TourDetailModal: React.FC<TourDetailModalProps> = ({
@@ -42,9 +42,10 @@ const TourDetailModal: React.FC<TourDetailModalProps> = ({
   tourImages,
   isOpen,
   onClose,
-  onReserve,
-  reserveText
+  onReserve
 }) => {
+  const { t } = useLanguage();
+  
   if (!isOpen || !tour) return null;
 
   return (
@@ -177,13 +178,13 @@ const TourDetailModal: React.FC<TourDetailModalProps> = ({
               onClick={onClose}
               className="flex-1 order-2 sm:order-1 text-sm sm:text-base"
             >
-              Cerrar
+              {t.cancel}
             </Button>
             <Button 
               onClick={() => onReserve(tour.id)}
               className="flex-1 order-1 sm:order-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base font-semibold"
             >
-              {reserveText}
+              {t.reserveNow}
             </Button>
             <Button 
               onClick={() => sendWhatsAppMessage({

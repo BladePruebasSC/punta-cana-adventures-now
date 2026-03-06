@@ -17,6 +17,7 @@ import RobustImage from '@/components/RobustImage';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import PayPalPayment from '@/components/PayPalPayment';
 import AzulPayment from '@/components/AzulPayment';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Tour {
   id: string;
@@ -43,6 +44,7 @@ const Reservar = () => {
   const { tourId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [tour, setTour] = useState<Tour | null>(null);
   const [tourImages, setTourImages] = useState<TourImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,8 +133,8 @@ const Reservar = () => {
     } catch (error) {
       console.error('Error fetching tour data:', error);
       toast({
-        title: "Error",
-        description: "No se pudo cargar la información del tour",
+        title: t.errorProcessing,
+        description: t.errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -146,8 +148,8 @@ const Reservar = () => {
     // Validar campos requeridos
     if (!formData.name || !formData.email || !formData.phone || !formData.date) {
       toast({
-        title: "Campos requeridos",
-        description: "Por favor completa todos los campos obligatorios",
+        title: t.requiredFields,
+        description: t.completeAllFields,
         variant: "destructive",
       });
       return;
@@ -228,8 +230,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       
       // Mostrar mensaje de éxito
       toast({
-        title: "¡Reserva enviada!",
-        description: "Redirigiendo a WhatsApp para confirmar tu reserva...",
+        title: t.reservationSent,
+        description: t.redirectingToWhatsApp,
       });
       
       // Redirigir a WhatsApp después de un breve delay
@@ -260,8 +262,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
     } catch (error) {
       console.error('Error creating WhatsApp reservation:', error);
       toast({
-        title: "Error",
-        description: `No se pudo procesar tu reserva. Error: ${error.message || 'Error desconocido'}`,
+        title: t.errorProcessing,
+        description: `${t.errorMessage} Error: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     } finally {
@@ -327,8 +329,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       if (paymentError) throw paymentError;
 
       toast({
-        title: "¡Reserva confirmada!",
-        description: "Tu reserva ha sido pagada y confirmada exitosamente con PayPal.",
+        title: t.reservationConfirmed,
+        description: t.paidSuccessfully,
       });
 
       // Redirigir a página de confirmación
@@ -339,8 +341,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
     } catch (error) {
       console.error('Error processing PayPal success:', error);
       toast({
-        title: "Error",
-        description: "Hubo un problema confirmando tu reserva. Contacta soporte.",
+        title: t.errorProcessing,
+        description: t.errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -351,8 +353,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
   const handlePayPalError = (error: any) => {
     console.error('PayPal error:', error);
     toast({
-      title: "Error en el pago",
-      description: error.message || "Hubo un problema procesando tu pago con PayPal",
+      title: t.paymentError,
+      description: error.message || t.paymentProblem,
       variant: "destructive",
     });
   };
@@ -412,8 +414,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       if (paymentError) throw paymentError;
 
       toast({
-        title: "¡Reserva confirmada!",
-        description: `Tu reserva ha sido pagada exitosamente con Azul. Código: ${paymentData.authorizationCode}`,
+        title: t.reservationConfirmed,
+        description: `${t.paidSuccessfully} ${t.paymentProblem}: ${paymentData.authorizationCode}`,
       });
 
       setTimeout(() => {
@@ -423,8 +425,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
     } catch (error) {
       console.error('Error processing Azul success:', error);
       toast({
-        title: "Error",
-        description: "Hubo un problema confirmando tu reserva. Contacta soporte.",
+        title: t.errorProcessing,
+        description: t.errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -435,8 +437,8 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
   const handleAzulError = (error: any) => {
     console.error('Azul error:', error);
     toast({
-      title: "Error en el pago",
-      description: error.message || "Hubo un problema procesando tu pago con Azul",
+      title: t.paymentError,
+      description: error.message || t.paymentProblem,
       variant: "destructive",
     });
   };
@@ -451,7 +453,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-sm sm:text-base">Cargando información del tour...</p>
+          <p className="text-gray-600 text-sm sm:text-base">{t.loadingTourInfo}</p>
         </div>
       </div>
     );
@@ -462,12 +464,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center px-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-lg sm:text-xl">Tour no encontrado</CardTitle>
-            <CardDescription className="text-sm sm:text-base">El tour que buscas no existe o ha sido eliminado.</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">{t.tourNotFound}</CardTitle>
+            <CardDescription className="text-sm sm:text-base">{t.tourDoesNotExist}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/')} className="w-full">
-              Volver al Inicio
+              {t.backToHome}
             </Button>
           </CardContent>
         </Card>
@@ -489,7 +491,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 size="sm"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline ml-2">Volver</span>
+                <span className="hidden sm:inline ml-2">{t.backButton}</span>
               </Button>
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
@@ -527,7 +529,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 }}
                 className="w-full justify-start"
               >
-                Inicio
+                {t.tours}
               </Button>
               <Button
                 variant="ghost"
@@ -537,7 +539,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 }}
                 className="w-full justify-start"
               >
-                Nosotros
+                {t.aboutUs}
               </Button>
               <Button
                 variant="ghost"
@@ -547,7 +549,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 }}
                 className="w-full justify-start"
               >
-                Contacto
+                {t.contact}
               </Button>
             </div>
           )}
@@ -634,7 +636,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                 
                 {/* Highlights ultra optimizados */}
                 <div>
-                  <h4 className="font-bold mb-3 text-gray-900 text-base sm:text-lg">Lo que incluye:</h4>
+                  <h4 className="font-bold mb-3 text-gray-900 text-base sm:text-lg">{t.tourIncludes}</h4>
                   <div className="flex flex-wrap gap-2 sm:gap-3">
                     {tour.highlights.map((highlight, index) => (
                       <Badge key={index} variant="secondary" className="text-xs sm:text-sm bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 font-medium">
@@ -658,14 +660,14 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 text-sm sm:text-base flex-1 sm:flex-none h-11 sm:h-12 font-semibold rounded-lg"
                   >
                     <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    <span className="hidden sm:inline">Contáctame por WhatsApp</span>
+                    <span className="hidden sm:inline">{t.whatsappReservation}</span>
                     <span className="sm:hidden">WhatsApp</span>
                   </Button>
                 </div>
 
                 {tourImages.length > 1 && (
                   <div className="text-xs sm:text-sm text-gray-600 text-center font-medium bg-gray-50 p-2 rounded-lg">
-                    📸 {tourImages.length} fotos disponibles - Usa las flechas para ver más
+                    📸 {tourImages.length} {t.photos}
                   </div>
                 )}
               </CardContent>
@@ -678,10 +680,10 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
               <CardHeader className="p-4 sm:p-5 md:p-6">
                 <CardTitle className="flex items-center gap-2 text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold">
                   <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                  Reservar este Tour
+                  {t.reserveThisTour}
                 </CardTitle>
                 <CardDescription className="text-gray-600 font-medium text-sm sm:text-base">
-                  Completa el formulario para reservar tu aventura
+                  {t.completeForm}
                 </CardDescription>
               </CardHeader>
               
@@ -690,20 +692,20 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   {/* Campos del formulario ultra optimizados */}
                   <div className="space-y-4 sm:space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-900 font-bold text-sm sm:text-base">Nombre Completo *</Label>
+                      <Label htmlFor="name" className="text-gray-900 font-bold text-sm sm:text-base">{t.fullName} *</Label>
                       <Input
                         id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        placeholder="Tu nombre completo"
+                        placeholder={t.yourName}
                         className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-900 font-bold text-sm sm:text-base">Email *</Label>
+                      <Label htmlFor="email" className="text-gray-900 font-bold text-sm sm:text-base">{t.email} *</Label>
                       <Input
                         id="email"
                         name="email"
@@ -711,7 +713,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        placeholder="tu@email.com"
+                        placeholder={t.yourEmail}
                         className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
@@ -719,7 +721,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-gray-900 font-bold text-sm sm:text-base">Teléfono *</Label>
+                      <Label htmlFor="phone" className="text-gray-900 font-bold text-sm sm:text-base">{t.phone} *</Label>
                       <Input
                         id="phone"
                         name="phone"
@@ -727,13 +729,13 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                         value={formData.phone}
                         onChange={handleInputChange}
                         required
-                        placeholder="+1 (809) 840-8257"
+                        placeholder={t.yourPhone}
                         className="text-sm sm:text-base h-11 sm:h-12 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="guests" className="text-gray-900 font-bold text-sm sm:text-base">Huéspedes *</Label>
+                      <Label htmlFor="guests" className="text-gray-900 font-bold text-sm sm:text-base">{t.numberOfGuests} *</Label>
                       <Input
                         id="guests"
                         name="guests"
@@ -749,7 +751,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date" className="text-gray-900 font-bold text-sm sm:text-base">Fecha Preferida *</Label>
+                    <Label htmlFor="date" className="text-gray-900 font-bold text-sm sm:text-base">{t.preferredDate} *</Label>
                     <Input
                       id="date"
                       name="date"
@@ -763,13 +765,13 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="special_requests" className="text-gray-900 font-bold text-sm sm:text-base">Solicitudes Especiales</Label>
+                    <Label htmlFor="special_requests" className="text-gray-900 font-bold text-sm sm:text-base">{t.specialRequests}</Label>
                     <Textarea
                       id="special_requests"
                       name="special_requests"
                       value={formData.special_requests}
                       onChange={handleInputChange}
-                      placeholder="Alguna solicitud especial, restricciones alimentarias, etc."
+                      placeholder={t.anySpecialRequests}
                       rows={3}
                       className="text-sm sm:text-base rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
@@ -777,22 +779,22 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   
                   {/* Resumen ultra optimizado */}
                   <div className="bg-gradient-to-r from-blue-50 to-emerald-50 p-4 sm:p-5 rounded-xl border border-blue-200">
-                    <h4 className="font-bold text-blue-900 mb-3 text-sm sm:text-base">Resumen de la Reserva</h4>
+                    <h4 className="font-bold text-blue-900 mb-3 text-sm sm:text-base">{t.reservationSummary}</h4>
                     <div className="space-y-2 text-xs sm:text-sm text-blue-800">
                       <div className="flex justify-between items-start">
-                        <span className="font-medium">Tour:</span>
+                        <span className="font-medium">{t.tour}:</span>
                         <span className="text-right max-w-[60%] font-semibold">{tour.title}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">Precio por persona:</span>
+                        <span className="font-medium">{t.pricePerPerson}:</span>
                         <span className="font-semibold">${tour.price}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">Huéspedes:</span>
+                        <span className="font-medium">{t.guests}:</span>
                         <span className="font-semibold">{formData.guests}</span>
                       </div>
                       <div className="flex justify-between font-bold border-t border-blue-300 pt-2 text-sm sm:text-base">
-                        <span>Total estimado:</span>
+                        <span>{t.estimatedTotal}:</span>
                         <span className="text-blue-900">${(tour.price * parseInt(formData.guests || '1')).toFixed(2)}</span>
                       </div>
                     </div>
@@ -806,12 +808,12 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                     {submitting ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
-                        Procesando...
+                        {t.processing}
                       </>
                     ) : (
                       <>
                         <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        Continuar con el Pago
+                        {t.continueWithPayment}
                       </>
                     )}
                   </Button>

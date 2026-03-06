@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Tour {
   id: string;
@@ -23,15 +24,15 @@ interface TourCardProps {
   tour: Tour;
   onTourClick: (tourId: string) => void;
   onReserveClick: (tourId: string, e?: React.MouseEvent) => void;
-  reserveText: string;
 }
 
 const TourCard: React.FC<TourCardProps> = memo(({ 
   tour, 
   onTourClick, 
-  onReserveClick, 
-  reserveText 
+  onReserveClick 
 }) => {
+  const { t } = useLanguage();
+  
   // Truncate description to about 80 characters
   const truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
@@ -112,7 +113,7 @@ const TourCard: React.FC<TourCardProps> = memo(({
             onClick={(e) => onReserveClick(tour.id, e)}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 sm:py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
           >
-            {reserveText}
+            {t.reserveNow}
           </Button>
           <Button
             onClick={(e) => {

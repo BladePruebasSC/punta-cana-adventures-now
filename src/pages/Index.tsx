@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, MapPin, Star, Clock, Users, Filter, Menu, X } from 'lucide-react';
+import { Search, MapPin, Star, Clock, Users, Filter, Menu, X, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import TourCard from '@/components/TourCard';
 import TourDetailModal from '@/components/TourDetailModal';
 import TransportationSection from '@/components/TransportationSection';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SiteSetting {
   id: string;
@@ -40,7 +41,8 @@ const translations = {
     toursFound: "tours encontrados para",
     noToursFound: "No se encontraron tours para",
     clearSearch: "Limpiar búsqueda",
-    loadingTours: "Cargando tours...",
+    loadingTours: "Cargando tours increíbles...",
+    loadingSubtitle: "Preparando las mejores experiencias para ti",
     noToursCategory: "No hay tours disponibles en esta categoría.",
     noToursSearch: "No se encontraron tours que coincidan con tu búsqueda.",
     viewAllTours: "Ver todos los tours",
@@ -61,10 +63,13 @@ const translations = {
     safariAdventure: "Safari Aventura",
     blueHole: "Hoyo Azul",
     santoDomingo: "Santo Domingo",
-    hours: "7:00 AM - 10:00 PM"
+    hours: "7:00 AM - 10:00 PM",
+    tours: "Tours",
+    aboutUs: "Nosotros",
+    languageSelector: "Idioma"
   },
   en: {
-    heroTitle: "RESERVE YOUR TOUR HERE NOW",
+    heroTitle: "EXPLORE ALL PUNTA CANA NOW",
     heroSubtitle: "Transportation • Tours • Excursions • Unforgettable Experiences",
     searchPlaceholder: "Search tours, adventures...",
     exploreButton: "Explore Tours",
@@ -72,7 +77,7 @@ const translations = {
     smallGroups: "Small Groups",
     localGuides: "Local Guides",
     featuredTours: "Featured Tours",
-    featuredSubtitle: "From jungle adventures to relaxing days on paradise beaches",
+    featuredSubtitle: "Enjoy the best activities and adventures in Punta Cana. With the best quality, prices and Guaranteed Services",
     allTours: "All Tours",
     adventure: "Adventure",
     beach: "Beach & Sea",
@@ -81,7 +86,8 @@ const translations = {
     toursFound: "tours found for",
     noToursFound: "No tours found for",
     clearSearch: "Clear search",
-    loadingTours: "Loading tours...",
+    loadingTours: "Loading incredible tours...",
+    loadingSubtitle: "Preparing the best experiences for you",
     noToursCategory: "No tours available in this category.",
     noToursSearch: "No tours found matching your search.",
     viewAllTours: "View all tours",
@@ -102,48 +108,10 @@ const translations = {
     safariAdventure: "Safari Adventure",
     blueHole: "Blue Hole",
     santoDomingo: "Santo Domingo",
-    hours: "7:00 AM - 10:00 PM"
-  },
-  fr: {
-    heroTitle: "RÉSERVEZ VOTRE TOUR ICI MAINTENANT",
-    heroSubtitle: "Transport • Circuits • Excursions • Expériences Inoubliables",
-    searchPlaceholder: "Rechercher des circuits, aventures...",
-    exploreButton: "Explorer les Circuits",
-    reviews: "+1000 Avis 5★",
-    smallGroups: "Petits Groupes",
-    localGuides: "Guides Locaux",
-    featuredTours: "Circuits Vedettes",
-    featuredSubtitle: "Des aventures dans la jungle aux journées relaxantes sur les plages paradisiaques",
-    allTours: "Tous les Circuits",
-    adventure: "Aventure",
-    beach: "Plage & Mer",
-    culture: "Culture",
-    nature: "Nature",
-    toursFound: "circuits trouvés pour",
-    noToursFound: "Aucun circuit trouvé pour",
-    clearSearch: "Effacer la recherche",
-    loadingTours: "Chargement des circuits...",
-    noToursCategory: "Aucun circuit disponible dans cette catégorie.",
-    noToursSearch: "Aucun circuit trouvé correspondant à votre recherche.",
-    viewAllTours: "Voir tous les circuits",
-    reserveNow: "Réserver Maintenant",
-    photos: "photos",
-    readyForAdventure: "Prêt pour Votre Aventure?",
-    contactExperts: "Contactez nos experts locaux pour créer votre expérience parfaite",
-    popularTours: "Circuits Populaires",
-    services: "Services",
-    contact: "Contact",
-    privateTours: "Circuits Privés",
-    corporateGroups: "Groupes d'Entreprise",
-    transportation: "Transport",
-    certifiedGuides: "Guides Certifiés",
-    copyright: "© 2024 Jon Tours Punta Cana. Tous droits réservés.",
-    authenticExperiences: "Expériences Authentiques",
-    saonaIsland: "Île Saona",
-    safariAdventure: "Safari Aventure",
-    blueHole: "Trou Bleu",
-    santoDomingo: "Saint-Domingue",
-    hours: "7:00 AM - 10:00 PM"
+    hours: "7:00 AM - 10:00 PM",
+    tours: "Tours",
+    aboutUs: "About Us",
+    languageSelector: "Language"
   }
 };
 
@@ -179,20 +147,13 @@ interface Category {
 const Index = () => {
   const navigate = useNavigate();
   
-  // Language detection and translation
+  // Language state
   const [currentLanguage, setCurrentLanguage] = useState('es');
   
+  // Translation helper
   const t = useMemo(() => {
     return translations[currentLanguage as keyof typeof translations] || translations.es;
   }, [currentLanguage]);
-  
-  useEffect(() => {
-    // Detect browser language
-    const browserLang = navigator.language.split('-')[0];
-    const supportedLanguages = ['es', 'en', 'fr'];
-    const detectedLang = supportedLanguages.includes(browserLang) ? browserLang : 'es';
-    setCurrentLanguage(detectedLang);
-  }, []);
 
   // Update categories when language changes
   useEffect(() => {
@@ -472,10 +433,10 @@ const Index = () => {
               Jon Tours Punta Cana
             </h2>
             <p className="text-gray-700 text-base sm:text-lg font-medium">
-              Cargando tours increíbles...
+              {t.loadingTours}
             </p>
             <p className="text-gray-500 text-sm">
-              Preparando las mejores experiencias para ti
+              {t.loadingSubtitle}
             </p>
           </div>
           
@@ -516,8 +477,8 @@ const Index = () => {
             </div>
             
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-4 xl:space-x-6">
-              <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Tours</a>
+            <nav className="hidden lg:flex space-x-4 xl:space-x-6 items-center">
+              <a href="#tours" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">{t.tours}</a>
               <button 
                 onClick={() => {
                   const element = document.getElementById('transportation');
@@ -525,15 +486,49 @@ const Index = () => {
                 }}
                 className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base"
               >
-                Transporte
+                {t.transportation}
               </button>
-              <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Nosotros</a>
-              <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">Contacto</a>
+              <a href="/nosotros" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">{t.aboutUs}</a>
+              <a href="/contacto" className="text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base">{t.contact}</a>
+              
+              {/* Selector de Idioma - Desktop */}
+              <div className="relative group">
+                <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors text-sm xl:text-base px-3 py-2 rounded-lg hover:bg-blue-50">
+                  <Globe className="w-4 h-4" />
+                  <span className="font-medium">{currentLanguage.toUpperCase()}</span>
+                </button>
+                <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <button
+                    onClick={() => setCurrentLanguage('es')}
+                    className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors rounded-t-lg ${currentLanguage === 'es' ? 'bg-blue-100 text-blue-600 font-bold' : 'text-gray-700'}`}
+                  >
+                    🇪🇸 Español
+                  </button>
+                  <button
+                    onClick={() => setCurrentLanguage('en')}
+                    className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors rounded-b-lg ${currentLanguage === 'en' ? 'bg-blue-100 text-blue-600 font-bold' : 'text-gray-700'}`}
+                  >
+                    🇺🇸 English
+                  </button>
+                </div>
+              </div>
             </nav>
+
+            {/* Selector de Idioma - Mobile (visible solo en móvil) */}
+            <div className="lg:hidden flex items-center gap-2 ml-2">
+              <button 
+                onClick={() => setCurrentLanguage(currentLanguage === 'es' ? 'en' : 'es')}
+                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50 flex-shrink-0"
+                aria-label="Cambiar idioma"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-xs font-bold">{currentLanguage.toUpperCase()}</span>
+              </button>
+            </div>
 
             {/* Mobile Menu Button */}
             <button 
-              className="lg:hidden p-2 ml-2 flex-shrink-0"
+              className="lg:hidden p-2 flex-shrink-0"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Abrir menú"
             >
@@ -554,7 +549,7 @@ const Index = () => {
                   className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Tours
+                  {t.tours}
                 </a>
                 <button 
                   onClick={() => {
@@ -564,21 +559,21 @@ const Index = () => {
                   }}
                   className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-left w-full text-base font-medium"
                 >
-                  Transporte
+                  {t.transportation}
                 </button>
                 <a 
                   href="/nosotros" 
                   className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Nosotros
+                  {t.aboutUs}
                 </a>
                 <a 
                   href="/contacto" 
                   className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-3 py-3 rounded-lg text-base font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Contacto
+                  {t.contact}
                 </a>
               </nav>
             </div>
@@ -734,7 +729,6 @@ const Index = () => {
                 tour={tour}
                 onTourClick={handleTourClick}
                 onReserveClick={handleReserveNow}
-                reserveText={t.reserveNow}
               />
             ))}
           </div>
@@ -853,7 +847,6 @@ const Index = () => {
         isOpen={modalOpen}
         onClose={handleCloseModal}
         onReserve={handleReserveFromModal}
-        reserveText={t.reserveNow}
       />
     </div>
   );
