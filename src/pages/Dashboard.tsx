@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload, Settings, Image as ImageIcon, MessageCircle } from 'lucide-react';
+import { Calendar, Users, Clock, Mail, Phone, MessageSquare, Check, X, Eye, EyeOff, Plus, Edit, Trash2, Home, Upload, Settings, Image as ImageIcon, MessageCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,7 @@ interface Post {
   category: string;
   group_size: string;
   highlights: string[];
+  display_order: number;
   created_at: string;
 }
 
@@ -468,7 +469,7 @@ const Dashboard = () => {
   };
 
   const sendConfirmationWhatsApp = (reservation: Reservation) => {
-    const message = `🎉 *RESERVA CONFIRMADA - Jon Tour Punta Cana* 🎉
+    const message = `🎉 *RESERVA CONFIRMADA - Jon Tours Punta Cana* 🎉
 
 ¡Hola ${reservation.name}! ✨
 
@@ -487,7 +488,7 @@ Tu reserva ha sido confirmada exitosamente:
 
 ${reservation.special_requests ? `📝 *Hemos anotado:*\n${reservation.special_requests}\n\n` : ''}¡Estamos emocionados de tenerte en esta aventura! 🌴
 
-*Jon Tour Punta Cana*
+*Jon Tours Punta Cana*
 +1 (809) 840-8257`;
 
     const phoneNumber = reservation.phone.replace(/[^\d]/g, '');
@@ -561,7 +562,7 @@ ${message.message}
 ¿En qué podemos ayudarte? 
 
 Saludos,
-Jon Tour Punta Cana
+Jon Tours Punta Cana
 +1 (809) 840-8257`;
 
     const encodedMessage = encodeURIComponent(messageText);
@@ -585,6 +586,10 @@ Jon Tour Punta Cana
 
   const handleAddPost = async () => {
     try {
+      // TEMPORALMENTE COMENTADO: Requiere la columna display_order
+      // const maxOrder = posts.length > 0 ? Math.max(...posts.map(p => p.display_order || 0)) : 0;
+      // const nextOrder = maxOrder + 1;
+
       // Insertar el tour en posts
       const { data: postData, error: postError } = await supabase
         .from('posts')
@@ -597,7 +602,8 @@ Jon Tour Punta Cana
           rating: newPost.rating,
           category: newPost.category,
           group_size: newPost.group_size,
-          highlights: newPost.highlights.filter(h => h.trim() !== '')
+          highlights: newPost.highlights.filter(h => h.trim() !== ''),
+          // display_order: nextOrder // TEMPORALMENTE COMENTADO
         }])
         .select()
         .single();
@@ -765,6 +771,114 @@ Jon Tour Punta Cana
         variant: "destructive",
       });
     }
+  };
+
+  const moveTourUp = async (tourId: string, currentOrder: number) => {
+    toast({
+      title: "Función deshabilitada",
+      description: "Por favor aplica la migración de base de datos para usar esta función",
+      variant: "destructive",
+    });
+    /* TEMPORALMENTE DESHABILITADO - Necesita la columna display_order
+    try {
+      // Encontrar el tour anterior (con display_order menor)
+      const tourAbove = posts
+        .filter(p => p.display_order < currentOrder)
+        .sort((a, b) => b.display_order - a.display_order)[0];
+
+      if (!tourAbove) {
+        toast({
+          title: "Información",
+          description: "Este tour ya está en la primera posición",
+        });
+        return;
+      }
+
+      // Intercambiar los display_order
+      const { error: error1 } = await supabase
+        .from('posts')
+        .update({ display_order: tourAbove.display_order })
+        .eq('id', tourId);
+
+      const { error: error2 } = await supabase
+        .from('posts')
+        .update({ display_order: currentOrder })
+        .eq('id', tourAbove.id);
+
+      if (error1 || error2) throw error1 || error2;
+
+      toast({
+        title: "Orden actualizado",
+        description: "El tour se ha movido hacia arriba",
+      });
+
+      // Invalidar caché y recargar
+      invalidateCache.tours();
+      fetchData();
+
+    } catch (error) {
+      console.error('Error moving tour up:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el orden del tour",
+        variant: "destructive",
+      });
+    }
+    */
+  };
+
+  const moveTourDown = async (tourId: string, currentOrder: number) => {
+    toast({
+      title: "Función deshabilitada",
+      description: "Por favor aplica la migración de base de datos para usar esta función",
+      variant: "destructive",
+    });
+    /* TEMPORALMENTE DESHABILITADO - Necesita la columna display_order
+    try {
+      // Encontrar el tour siguiente (con display_order mayor)
+      const tourBelow = posts
+        .filter(p => p.display_order > currentOrder)
+        .sort((a, b) => a.display_order - b.display_order)[0];
+
+      if (!tourBelow) {
+        toast({
+          title: "Información",
+          description: "Este tour ya está en la última posición",
+        });
+        return;
+      }
+
+      // Intercambiar los display_order
+      const { error: error1 } = await supabase
+        .from('posts')
+        .update({ display_order: tourBelow.display_order })
+        .eq('id', tourId);
+
+      const { error: error2 } = await supabase
+        .from('posts')
+        .update({ display_order: currentOrder })
+        .eq('id', tourBelow.id);
+
+      if (error1 || error2) throw error1 || error2;
+
+      toast({
+        title: "Orden actualizado",
+        description: "El tour se ha movido hacia abajo",
+      });
+
+      // Invalidar caché y recargar
+      invalidateCache.tours();
+      fetchData();
+
+    } catch (error) {
+      console.error('Error moving tour down:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el orden del tour",
+        variant: "destructive",
+      });
+    }
+    */
   };
 
   const handleAddTourImage = async (tourId: string, imageUrl: string, altText: string) => {
@@ -1032,7 +1146,7 @@ Jon Tour Punta Cana
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Jon Tour Punta Cana Dashboard
+              Jon Tours Punta Cana Dashboard
             </CardTitle>
             <CardDescription>
               Ingresa la contraseña para acceder
@@ -1096,7 +1210,7 @@ Jon Tour Punta Cana
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
           <div className="flex flex-col space-y-4">
             <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent text-center sm:text-left">
-              Dashboard - Jon Tour Punta Cana
+              Dashboard - Jon Tours Punta Cana
             </h1>
             
             {/* Navegación principal - Ultra optimizada para móvil */}
@@ -1552,6 +1666,11 @@ Jon Tour Punta Cana
                       alt={post.title}
                       className="w-full h-48 object-cover"
                     />
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="bg-white/90 text-gray-900 font-bold">
+                        #{post.display_order || 0}
+                      </Badge>
+                    </div>
                     <div className="absolute top-2 right-2">
                       <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600">
                         ${post.price}
@@ -1589,6 +1708,30 @@ Jon Tour Punta Cana
                           +{post.highlights.length - 2} más
                         </Badge>
                       )}
+                    </div>
+                    
+                    {/* Botones de ordenar */}
+                    <div className="flex gap-2 pb-2 border-b">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => moveTourUp(post.id, post.display_order || 0)}
+                        className="flex-1"
+                        title="Mover hacia arriba"
+                      >
+                        <ArrowUp className="w-4 h-4 mr-1" />
+                        Subir
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => moveTourDown(post.id, post.display_order || 0)}
+                        className="flex-1"
+                        title="Mover hacia abajo"
+                      >
+                        <ArrowDown className="w-4 h-4 mr-1" />
+                        Bajar
+                      </Button>
                     </div>
                     
                     <div className="flex gap-2">

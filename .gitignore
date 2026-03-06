@@ -22,4 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (Frontend y Backend)
 .env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+
+# Stripe
+*.pem
+stripe-webhook-secret.txt

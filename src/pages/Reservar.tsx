@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Users, Clock, Star, ArrowLeft, Menu, X, MessageCircle, CreditCard } from 'lucide-react';
@@ -17,6 +16,7 @@ import WhatsAppIcon from '@/components/ui/whatsapp-icon';
 import RobustImage from '@/components/RobustImage';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
 import PayPalPayment from '@/components/PayPalPayment';
+import AzulPayment from '@/components/AzulPayment';
 
 interface Tour {
   id: string;
@@ -49,8 +49,9 @@ const Reservar = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPaymentMethodSelector, setShowPaymentMethodSelector] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'whatsapp' | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'azul' | 'paypal' | 'whatsapp' | null>(null);
   const [showPayPalForm, setShowPayPalForm] = useState(false);
+  const [showAzulForm, setShowAzulForm] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -138,14 +139,15 @@ const Reservar = () => {
     setShowPaymentMethodSelector(true);
   };
 
-  const handlePaymentMethodSelect = (method: 'paypal' | 'whatsapp') => {
+  const handlePaymentMethodSelect = (method: 'azul' | 'paypal' | 'whatsapp') => {
     setSelectedPaymentMethod(method);
     setShowPaymentMethodSelector(false);
     
-    if (method === 'paypal') {
+    if (method === 'azul') {
+      setShowAzulForm(true);
+    } else if (method === 'paypal') {
       setShowPayPalForm(true);
     } else {
-      // Proceder con WhatsApp
       handleWhatsAppReservation();
     }
   };
@@ -190,7 +192,7 @@ const Reservar = () => {
       }
 
       // Crear mensaje para WhatsApp con todos los datos
-      const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tour Punta Cana* 🌴
+      const whatsappMessage = `🌴 *NUEVA RESERVA - Jon Tours Punta Cana* 🌴
 
 📋 *Detalles de la Reserva:*
 • Tour: ${tour?.title}
@@ -337,6 +339,90 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
     });
   };
 
+  const handleAzulSuccess = async (paymentData: any) => {
+    setSubmitting(true);
+
+    try {
+      const totalAmount = tour ? tour.price * parseInt(formData.guests) : 0;
+      
+      const { data: reservation, error: reservationError } = await supabase
+        .from('reservations')
+        .insert([
+          {
+            tour_id: tourId,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            date: formData.date,
+            guests: parseInt(formData.guests),
+            special_requests: formData.special_requests || null,
+            status: 'confirmed',
+            payment_method: 'azul',
+            payment_status: 'paid',
+            total_amount: totalAmount
+          }
+        ])
+        .select()
+        .single();
+
+      if (reservationError) throw reservationError;
+
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert([
+          {
+            reservation_id: reservation.id,
+            payment_intent_id: paymentData.authorizationCode,
+            amount: totalAmount,
+            currency: 'USD',
+            status: 'succeeded',
+            payment_method: 'azul',
+            payment_type: 'full',
+            metadata: {
+              tour_title: tour?.title,
+              guest_name: formData.name,
+              guest_email: formData.email,
+              guest_phone: formData.phone,
+              tour_date: formData.date,
+              guest_count: formData.guests,
+              azul_order_number: paymentData.orderNumber,
+              azul_authorization_code: paymentData.authorizationCode
+            }
+          }
+        ]);
+
+      if (paymentError) throw paymentError;
+
+      toast({
+        title: "¡Reserva confirmada!",
+        description: `Tu reserva ha sido pagada exitosamente con Azul. Código: ${paymentData.authorizationCode}`,
+      });
+
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error processing Azul success:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema confirmando tu reserva. Contacta soporte.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAzulError = (error: any) => {
+    console.error('Azul error:', error);
+    toast({
+      title: "Error en el pago",
+      description: error.message || "Hubo un problema procesando tu pago con Azul",
+      variant: "destructive",
+    });
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -392,7 +478,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Jon Tour Punta Cana
+                  Jon Tours Punta Cana
                 </h1>
               </div>
             </div>
@@ -718,16 +804,16 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                       <div className="text-xs sm:text-sm text-blue-800">
                         <p className="font-bold mb-2">Opciones de pago disponibles:</p>
                         <ul className="space-y-1">
-                          <li>• Pago con PayPal (sin cuenta necesaria)</li>
-                          <li>• Coordinación por WhatsApp (método tradicional)</li>
-                          <li>• Confirmación inmediata con pago en línea</li>
+                          <li>• 🇩🇴 Azul (Banco Popular) - Tarjetas RD e internacionales</li>
+                          <li>• 💰 PayPal (sin cuenta necesaria)</li>
+                          <li>• 💬 Coordinación por WhatsApp</li>
                         </ul>
                       </div>
                     </div>
                   </div>
                   
                   <p className="text-xs sm:text-sm text-gray-600 text-center font-medium mt-3">
-                    * Puedes elegir entre pago en línea (PayPal) o coordinar por WhatsApp
+                    * Elige tu método de pago preferido en el siguiente paso
                   </p>
                 </form>
               </CardContent>
@@ -776,7 +862,7 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
               </div>
               
               <PayPalPayment
-                amount={tour ? tour.price * parseInt(formData.guests) : 0}
+                amount={tour && formData.guests ? tour.price * parseInt(formData.guests) : (tour?.price || 0)}
                 currency="USD"
                 onPaymentSuccess={handlePayPalSuccess}
                 onPaymentError={handlePayPalError}
@@ -790,6 +876,48 @@ ${formData.special_requests ? `📝 *Solicitudes especiales:*\n${formData.specia
                   variant="outline"
                   onClick={() => {
                     setShowPayPalForm(false);
+                    setShowPaymentMethodSelector(true);
+                  }}
+                  className="w-full sm:w-auto text-sm sm:text-base h-10 sm:h-11 rounded-lg"
+                >
+                  Volver a opciones de pago
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para formulario de Azul */}
+      {showAzulForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 sm:p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                  Pago con Azul 🇩🇴
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Pago seguro procesado por Banco Popular Dominicano
+                </p>
+              </div>
+              
+              <AzulPayment
+                amount={tour && formData.guests ? tour.price * parseInt(formData.guests) : (tour?.price || 0)}
+                currency="USD"
+                onPaymentSuccess={handleAzulSuccess}
+                onPaymentError={handleAzulError}
+                tourTitle={tour?.title || ''}
+                guestName={formData.name}
+                guestEmail={formData.email}
+                guestPhone={formData.phone}
+              />
+              
+              <div className="mt-4 sm:mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAzulForm(false);
                     setShowPaymentMethodSelector(true);
                   }}
                   className="w-full sm:w-auto text-sm sm:text-base h-10 sm:h-11 rounded-lg"

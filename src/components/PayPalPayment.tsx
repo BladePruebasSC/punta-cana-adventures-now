@@ -31,11 +31,26 @@ const PayPalButtonsComponent: React.FC<{
   const { toast } = useToast();
 
   const createOrder = (data: any, actions: any) => {
+    // Validar que el monto sea mayor a 0
+    const validAmount = amount > 0 ? amount : 0.01; // PayPal requiere mínimo $0.01
+    
+    console.log('💰 Creating PayPal order with amount:', validAmount, 'Currency:', currency);
+    
+    if (amount <= 0) {
+      console.error('❌ ERROR: Amount is zero or negative:', amount);
+      toast({
+        title: "Error",
+        description: "El monto del pago no puede ser $0. Por favor recarga la página.",
+        variant: "destructive",
+      });
+      throw new Error('Invalid amount: cannot be zero or negative');
+    }
+    
     return actions.order.create({
       purchase_units: [
         {
           amount: {
-            value: amount.toFixed(2),
+            value: validAmount.toFixed(2),
             currency_code: currency.toUpperCase(),
           },
           description: `Reserva de tour: ${tourTitle}`,
@@ -43,7 +58,7 @@ const PayPalButtonsComponent: React.FC<{
         },
       ],
       application_context: {
-        brand_name: 'Jon Tour Punta Cana',
+        brand_name: 'Jon Tours Punta Cana',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
         return_url: window.location.origin + '/reserva-exitosa',
@@ -167,6 +182,16 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
 
   const depositAmount = amount * 0.3;
   const finalAmount = paymentMethod === 'full' ? amount : depositAmount;
+  
+  // Debug: Log payment values
+  console.log('🔍 PayPal Component - Amount received:', amount);
+  console.log('🔍 PayPal Component - Final amount:', finalAmount);
+  console.log('🔍 PayPal Component - Payment method:', paymentMethod);
+  
+  // Mostrar error si el monto es 0
+  if (amount <= 0) {
+    console.error('❌ ERROR: PayPal received invalid amount:', amount);
+  }
 
   // Configuración de PayPal
   const paypalOptions = {

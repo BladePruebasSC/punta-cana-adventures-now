@@ -1,10 +1,11 @@
 // API para manejar pagos con Stripe
 // Este archivo simula las llamadas a la API que normalmente estarían en el backend
 
-interface CreatePaymentIntentRequest {
+export interface CreatePaymentIntentRequest {
   amount: number; // en centavos
   currency: string;
   metadata: Record<string, string>;
+  paymentMethodTypes?: string[]; // Métodos de pago habilitados
 }
 
 interface CreatePaymentIntentResponse {
@@ -12,33 +13,84 @@ interface CreatePaymentIntentResponse {
   error?: string;
 }
 
-// Simulación de API endpoint para crear PaymentIntent
-// En producción, esto debería ser un endpoint real en tu backend
+// PRODUCCIÓN: Reemplaza esta función con una llamada real a tu backend
 export const createPaymentIntent = async (data: CreatePaymentIntentRequest): Promise<CreatePaymentIntentResponse> => {
   try {
-    // Simular llamada a API
     console.log('Creating payment intent with data:', data);
     
-    // En un entorno real, aquí harías una llamada a tu backend:
-    // const response = await fetch('/api/create-payment-intent', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data)
-    // });
+    // 🚨 IMPORTANTE: Este es un endpoint simulado para desarrollo
+    // En PRODUCCIÓN, debes implementar un backend real
     
-    // Por ahora, simulamos una respuesta exitosa
-    // En producción, necesitarás configurar Stripe en tu backend
+    // ==========================================
+    // OPCIÓN 1: Backend Node.js + Express
+    // ==========================================
+    // Descomenta esto cuando tengas tu backend corriendo:
+    /*
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    
+    const response = await fetch(`${API_URL}/api/create-payment-intent`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al crear PaymentIntent');
+    }
+    
+    const result = await response.json();
+    return { clientSecret: result.clientSecret };
+    */
+    
+    // ==========================================
+    // OPCIÓN 2: Supabase Edge Function
+    // ==========================================
+    // Descomenta esto si usas Supabase Edge Functions:
+    /*
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/create-payment-intent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(data)
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al crear PaymentIntent');
+    }
+    
+    const result = await response.json();
+    return { clientSecret: result.clientSecret };
+    */
+    
+    // ==========================================
+    // MODO DESARROLLO: Simulación
+    // ==========================================
+    // ⚠️ ELIMINA ESTE CÓDIGO EN PRODUCCIÓN
+    console.warn('⚠️ USANDO MODO SIMULADO - Configura tu backend para producción');
+    
     const mockClientSecret = `pi_mock_${Date.now()}_secret_mock`;
     
     return {
       clientSecret: mockClientSecret
     };
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating payment intent:', error);
     return {
       clientSecret: '',
-      error: 'Error creating payment intent'
+      error: error.message || 'Error creating payment intent'
     };
   }
 };

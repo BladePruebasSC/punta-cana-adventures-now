@@ -14,7 +14,7 @@ import {
 
 interface PaymentMethodSelectorProps {
   totalAmount: number;
-  onSelectMethod: (method: 'paypal' | 'whatsapp') => void;
+  onSelectMethod: (method: 'azul' | 'paypal' | 'whatsapp') => void;
   tourTitle: string;
   guestCount: number;
 }
@@ -25,9 +25,9 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   tourTitle,
   guestCount
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'paypal' | 'whatsapp' | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<'azul' | 'paypal' | 'whatsapp' | null>(null);
 
-  const handleMethodSelect = (method: 'paypal' | 'whatsapp') => {
+  const handleMethodSelect = (method: 'azul' | 'paypal' | 'whatsapp') => {
     setSelectedMethod(method);
     onSelectMethod(method);
   };
@@ -43,7 +43,62 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        {/* Pago con Azul (Banco Popular) */}
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-lg rounded-xl ${
+            selectedMethod === 'azul' 
+              ? 'ring-2 ring-cyan-500 bg-cyan-50' 
+              : 'hover:bg-gray-50'
+          }`}
+          onClick={() => handleMethodSelect('azul')}
+        >
+          <CardContent className="p-4 sm:p-6">
+            <div className="text-center space-y-3 sm:space-y-4">
+              <div className="flex justify-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-cyan-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-600" />
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
+                  Azul
+                </h4>
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                  Banco Popular Dominicano
+                </p>
+              </div>
+
+              <div className="space-y-1 sm:space-y-2">
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm text-green-600">
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Tarjetas RD e internacionales</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm text-green-600">
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>100% seguro</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm text-green-600">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Aprobación inmediata</span>
+                </div>
+              </div>
+
+              <div className="pt-3 sm:pt-4 border-t">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                  ${totalAmount.toFixed(2)}
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600">Pago completo</p>
+              </div>
+
+              <Badge variant="secondary" className="mt-2 text-xs sm:text-sm bg-cyan-100 text-cyan-700">
+                Recomendado 🇩🇴
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Pago con PayPal - Ultra optimizado para móvil */}
         <Card 
           className={`cursor-pointer transition-all hover:shadow-lg rounded-xl ${
@@ -93,7 +148,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               </div>
 
               <Badge variant="secondary" className="mt-2 text-xs sm:text-sm">
-                Recomendado
+                Rápido y fácil
               </Badge>
             </div>
           </CardContent>
@@ -175,6 +230,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
             }}
             className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-sm sm:text-base py-3 sm:py-4 h-12 sm:h-14 font-bold rounded-lg shadow-lg"
           >
+            {selectedMethod === 'azul' && 'Continuar con Azul'}
             {selectedMethod === 'paypal' && 'Continuar con PayPal'}
             {selectedMethod === 'whatsapp' && 'Continuar con WhatsApp'}
           </Button>

@@ -79,7 +79,7 @@ const TransportationSection = () => {
 
   const handleDestinationClick = (destination: TransportationDestination) => {
     const phoneNumber = '18098408257';
-    const message = `🚗 *SOLICITUD DE TRASLADO - Jon Tour Punta Cana* 🚗
+    const message = `🚗 *SOLICITUD DE TRASLADO - Jon Tours Punta Cana* 🚗
 
 ¡Hola! Me interesa contratar el servicio de traslado.
 

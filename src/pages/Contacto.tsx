@@ -99,7 +99,7 @@ const Contacto = () => {
                 <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
               <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                Jon Tour Punta Cana
+                Jon Tours Punta Cana
               </h1>
             </div>
           </div>
@@ -408,7 +408,7 @@ const Contacto = () => {
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
                 <p className="text-gray-700 text-sm sm:text-base">
-                  <strong>Jon Tour Punta Cana</strong> nace en el 2021 como una empresa operadora 
+                  <strong>Jon Tours Punta Cana</strong> nace en el 2021 como una empresa operadora 
                   especializada en ventas de productos vacacionales online y servicios terrestres.
                 </p>
                 <p className="text-gray-700 text-sm sm:text-base">

@@ -55,7 +55,7 @@ const translations = {
     corporateGroups: "Grupos Corporativos",
     transportation: "Transporte",
     certifiedGuides: "Guías Certificados",
-    copyright: "© 2024 Jon Tour Punta Cana. Todos los derechos reservados.",
+    copyright: "© 2024 Jon Tours Punta Cana. Todos los derechos reservados.",
     authenticExperiences: "Experiencias Auténticas",
     saonaIsland: "Isla Saona",
     safariAdventure: "Safari Aventura",
@@ -96,7 +96,7 @@ const translations = {
     corporateGroups: "Corporate Groups",
     transportation: "Transportation",
     certifiedGuides: "Certified Guides",
-    copyright: "© 2024 Jon Tour Punta Cana. All rights reserved.",
+    copyright: "© 2024 Jon Tours Punta Cana. All rights reserved.",
     authenticExperiences: "Authentic Experiences",
     saonaIsland: "Saona Island",
     safariAdventure: "Safari Adventure",
@@ -137,7 +137,7 @@ const translations = {
     corporateGroups: "Groupes d'Entreprise",
     transportation: "Transport",
     certifiedGuides: "Guides Certifiés",
-    copyright: "© 2024 Jon Tour Punta Cana. Tous droits réservés.",
+    copyright: "© 2024 Jon Tours Punta Cana. Tous droits réservés.",
     authenticExperiences: "Expériences Authentiques",
     saonaIsland: "Île Saona",
     safariAdventure: "Safari Aventure",
@@ -158,6 +158,7 @@ interface Tour {
   category: string;
   group_size: string;
   highlights: string[];
+  display_order?: number;
 }
 
 interface TourImage {
@@ -467,7 +468,7 @@ const Index = () => {
 
   const handleWhatsAppClick = () => {
     const phoneNumber = '18098408257';
-    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tour Punta Cana* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
+    const message = encodeURIComponent('🌴 *CONSULTA GENERAL - Jon Tours Punta Cana* 🌴\n\n¡Hola! Me interesa información sobre sus tours en Punta Cana. ¿Podrías ayudarme a encontrar la experiencia perfecta para mi viaje? 🎉');
     
     // iOS-friendly WhatsApp redirect
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -518,7 +519,7 @@ const Index = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent truncate">
-                  JON TOUR PUNTA CANA
+                  JON TOURS PUNTA CANA
                 </h1>
                 <p className="text-xs text-gray-600 hidden sm:block">{t.authenticExperiences}</p>
               </div>
@@ -795,7 +796,7 @@ const Index = () => {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <span className="text-lg sm:text-xl font-bold">Jon Tour Punta Cana</span>
+                <span className="text-lg sm:text-xl font-bold">Jon Tours Punta Cana</span>
               </div>
               <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
                 {currentLanguage === 'es' ? 'Tu compañía de confianza para explorar lo mejor de República Dominicana.' :

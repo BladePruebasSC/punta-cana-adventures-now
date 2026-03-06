@@ -64,7 +64,7 @@ const Nosotros = () => {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900">Jon Tour Punta Cana</span>
+              <span className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900">Jon Tours Punta Cana</span>
             </div>
             
             {/* Desktop Navigation */}
@@ -150,7 +150,7 @@ const Nosotros = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
             <div className="order-2 lg:order-1">
               <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Jon Tour Punta Cana nace en el 2021
+                Jon Tours Punta Cana nace en el 2021
               </h3>
               <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
                 Como una empresa operadora especializada en ventas de productos vacacionales online 
@@ -433,12 +433,12 @@ const Nosotros = () => {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-sm sm:text-lg lg:text-xl font-bold">Jon Tour Punta Cana</span>
+              <span className="text-sm sm:text-lg lg:text-xl font-bold">Jon Tours Punta Cana</span>
             </div>
             
             <div className="text-center md:text-right">
               <p className="text-gray-400 text-xs sm:text-sm md:text-base">
-                © 2024 Jon Tour Punta Cana. Todos los derechos reservados.
+                © 2024 Jon Tours Punta Cana. Todos los derechos reservados.
               </p>
               <p className="text-gray-400 text-xs sm:text-sm">
                 Creando experiencias memorables en Punta Cana desde 2021

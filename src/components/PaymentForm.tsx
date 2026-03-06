@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
-  CardElement,
+  PaymentElement,
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
@@ -39,6 +39,46 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'deposit'>('card');
+  const [clientSecret, setClientSecret] = useState<string>('');
+
+  // Crear PaymentIntent cuando el componente se monta o cambia el monto
+  useEffect(() => {
+    const initPaymentIntent = async () => {
+      try {
+        const finalAmount = paymentMethod === 'card' ? amount : amount * 0.3;
+        
+        const { clientSecret: secret, error: backendError } = await import('@/lib/paymentApi').then(api => 
+          api.createPaymentIntent({
+            amount: Math.round(finalAmount * 100), // Stripe usa centavos
+            currency,
+            metadata: {
+              tourTitle,
+              guestName,
+              guestEmail,
+              paymentType: paymentMethod
+            }
+          })
+        );
+
+        if (backendError) {
+          throw new Error(backendError);
+        }
+
+        setClientSecret(secret);
+      } catch (error) {
+        console.error('Error creating payment intent:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo inicializar el pago. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (amount > 0) {
+      initPaymentIntent();
+    }
+  }, [amount, paymentMethod, currency, tourTitle, guestName, guestEmail, toast]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -50,33 +90,19 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
     setProcessing(true);
 
     try {
-      // Crear PaymentIntent usando la API simulada
-      const { clientSecret, error: backendError } = await import('@/lib/paymentApi').then(api => 
-        api.createPaymentIntent({
-          amount: Math.round(amount * 100), // Stripe usa centavos
-          currency,
-          metadata: {
-            tourTitle,
-            guestName,
-            guestEmail,
-            paymentType: paymentMethod
-          }
-        })
-      );
-
-      if (backendError) {
-        throw new Error(backendError);
-      }
-
-      // Confirmar el pago
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement)!,
-          billing_details: {
-            name: guestName,
-            email: guestEmail,
+      // Confirmar el pago usando Payment Element
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/confirmation`,
+          payment_method_data: {
+            billing_details: {
+              name: guestName,
+              email: guestEmail,
+            },
           },
-        }
+        },
+        redirect: 'if_required', // No redirigir si no es necesario
       });
 
       if (error) {
@@ -86,7 +112,7 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
           description: error.message || "Hubo un problema procesando tu pago",
           variant: "destructive",
         });
-      } else if (paymentIntent.status === 'succeeded') {
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         onPaymentSuccess(paymentIntent);
         toast({
           title: "¡Pago exitoso!",
@@ -104,21 +130,6 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
     } finally {
       setProcessing(false);
     }
-  };
-
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-      },
-      invalid: {
-        color: '#9e2146',
-      },
-    },
   };
 
   return (
@@ -169,14 +180,25 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
       </div>
 
       {/* Formulario de tarjeta */}
-      {paymentMethod === 'card' && (
+      {paymentMethod === 'card' && clientSecret && (
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
-              Información de la Tarjeta
+              Método de Pago
             </label>
             <div className="p-4 border border-gray-300 rounded-lg bg-white">
-              <CardElement options={cardElementOptions} />
+              {/* Payment Element soporta múltiples métodos de pago automáticamente */}
+              <PaymentElement 
+                options={{
+                  layout: 'tabs',
+                  defaultValues: {
+                    billingDetails: {
+                      name: guestName,
+                      email: guestEmail,
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
 
@@ -184,6 +206,22 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Lock className="w-4 h-4" />
             <span>Tu información está protegida con encriptación SSL</span>
+          </div>
+          
+          {/* Información de métodos disponibles */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-800">
+                <p className="font-medium mb-1">Métodos de pago disponibles:</p>
+                <ul className="space-y-0.5">
+                  <li>• 💳 Tarjetas de crédito/débito (Visa, Mastercard, Amex)</li>
+                  <li>• 📱 Apple Pay (en dispositivos compatibles)</li>
+                  <li>• 📱 Google Pay (en dispositivos compatibles)</li>
+                  <li>• 🏦 Transferencia bancaria (según región)</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -252,8 +290,9 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Información importante:</p>
             <ul className="space-y-1 text-xs">
-              <li>• Aceptamos tarjetas Visa, Mastercard y American Express</li>
               <li>• Los pagos se procesan de forma segura con Stripe</li>
+              <li>• Aceptamos múltiples métodos de pago</li>
+              <li>• Apple Pay y Google Pay disponibles en dispositivos compatibles</li>
               <li>• Recibirás un comprobante por email</li>
               {paymentMethod === 'deposit' && (
                 <li>• El saldo restante se pagará antes del tour</li>
@@ -267,8 +306,29 @@ const PaymentFormComponent: React.FC<PaymentFormProps> = ({
 };
 
 const PaymentForm: React.FC<PaymentFormProps> = (props) => {
+  // Opciones para el componente Elements
+  const options = {
+    mode: 'payment' as const,
+    amount: Math.round((props.amount) * 100), // Stripe usa centavos
+    currency: props.currency?.toLowerCase() || 'usd',
+    appearance: {
+      theme: 'stripe' as const,
+      variables: {
+        colorPrimary: '#2563eb',
+        colorBackground: '#ffffff',
+        colorText: '#1f2937',
+        colorDanger: '#dc2626',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        spacingUnit: '4px',
+        borderRadius: '8px',
+      },
+    },
+    // Habilitar métodos de pago adicionales
+    paymentMethodCreation: 'manual' as const,
+  };
+
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={options}>
       <PaymentFormComponent {...props} />
     </Elements>
   );
