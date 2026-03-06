@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
-import { toursCache, tourImagesCache, CACHE_KEYS } from '@/lib/cache';
+import { toursCache, tourImagesCache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache';
 import { useToast } from '@/hooks/use-toast';
 import { sendWhatsAppMessage } from '@/lib/utils';
 import WhatsAppIcon from '@/components/ui/whatsapp-icon';
@@ -64,37 +64,36 @@ const Reservar = () => {
 
   useEffect(() => {
     if (tourId) {
+      // Limpiar caché de este tour específico para asegurar datos frescos
+      tourImagesCache.forceRefresh(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId));
       fetchTourData();
     }
   }, [tourId]);
 
   const fetchTourData = async () => {
     try {
-      // Check cache first
+      // Siempre recargar las imágenes para asegurar que estén actualizadas
+      // El tour base puede venir del caché
       const cachedTour = toursCache.get<Tour>(CACHE_KEYS.TOUR_DETAIL(tourId));
-      const cachedImages = tourImagesCache.get<TourImage[]>(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId));
       
-      if (cachedTour && cachedImages) {
-        console.log('Using cached tour data');
-        setTour(cachedTour);
-        setTourImages(cachedImages);
-        setLoading(false);
-        return;
-      }
-
       // Fetch tour info and images in parallel for better performance
-      const [tourResponse, imagesResponse] = await Promise.all([
-        supabase
-          .from('posts')
-          .select('*')
-          .eq('id', tourId)
-          .single(),
+      // Siempre recargar imágenes, pero tour puede venir del caché
+      const promises = [
+        cachedTour 
+          ? Promise.resolve({ data: cachedTour, error: null })
+          : supabase
+              .from('posts')
+              .select('*')
+              .eq('id', tourId)
+              .single(),
         supabase
           .from('tour_images')
           .select('*')
           .eq('tour_id', tourId)
           .order('order_index', { ascending: true })
-      ]);
+      ];
+
+      const [tourResponse, imagesResponse] = await Promise.all(promises);
 
       const { data: tourData, error: tourError } = tourResponse;
       const { data: imagesData, error: imagesError } = imagesResponse;
@@ -102,11 +101,30 @@ const Reservar = () => {
       if (tourError) throw tourError;
       if (imagesError) throw imagesError;
 
-      // Cache the data
-      toursCache.set(CACHE_KEYS.TOUR_DETAIL(tourId), tourData, 10 * 60 * 1000); // 10 minutes
-      tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId), imagesData || [], 10 * 60 * 1000);
+      // Cache the data with consistent TTL
+      toursCache.set(CACHE_KEYS.TOUR_DETAIL(tourId), tourData, CACHE_TTL.TOUR_DETAIL);
+      tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES_DETAIL(tourId), imagesData || [], CACHE_TTL.TOUR_IMAGES);
 
       console.log('Tour data loaded:', tourData);
+      console.log('Tour images loaded - COUNT:', imagesData?.length || 0);
+      console.log('Tour images loaded - DETAILS:', imagesData);
+      
+      // Verificar si hay duplicados
+      if (imagesData && imagesData.length > 0) {
+        const uniqueIds = new Set(imagesData.map(img => img.id));
+        if (uniqueIds.size !== imagesData.length) {
+          console.error('⚠️ WARNING: Duplicate images detected!');
+          // Filtrar duplicados
+          const uniqueImages = imagesData.filter((img, index, self) => 
+            index === self.findIndex((t) => t.id === img.id)
+          );
+          console.log('Filtered unique images:', uniqueImages);
+          setTour(tourData);
+          setTourImages(uniqueImages);
+          return;
+        }
+      }
+      
       setTour(tourData);
       setTourImages(imagesData || []);
 

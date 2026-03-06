@@ -234,80 +234,50 @@ const Dashboard = () => {
             supabase.from('site_settings').select('*').order('created_at', { ascending: false })
           ]);
 
-          // Cargar imágenes de forma completamente opcional (no bloquear el dashboard)
-          let imagesResponse = { data: [], error: null };
-          
-          // Cargar imágenes en segundo plano sin bloquear la UI
-          if (postsResponse.data && postsResponse.data.length > 0) {
-            // No esperar por las imágenes, cargarlas en background
-            setTimeout(async () => {
-              try {
-                const tourIds = postsResponse.data.map(post => post.id);
-                
-                // Consulta más agresiva con timeout muy corto
-                const imagesPromise = supabase
-                  .from('tour_images')
-                  .select('*')
-                  .in('tour_id', tourIds)
-                  .order('order_index', { ascending: true })
-                  .limit(50); // Reducir aún más el límite
-
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Timeout')), 5000) // Solo 5 segundos
-                );
-
-                const result = await Promise.race([
-                  imagesPromise,
-                  timeoutPromise
-                ]) as any;
-
-                if (result.data && result.data.length > 0) {
-                  // Group images by tour_id
-                  const imagesByTour: Record<string, TourImage[]> = {};
-                  result.data.forEach(image => {
-                    if (!imagesByTour[image.tour_id]) {
-                      imagesByTour[image.tour_id] = [];
-                    }
-                    imagesByTour[image.tour_id].push(image);
-                  });
-                  
-                  setTourImages(imagesByTour);
-                  tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
-                  console.log('✅ Tour images loaded in background');
-                }
-              } catch (imageError) {
-                console.warn('Tour images loading failed (non-critical):', imageError);
-                // No hacer nada, las imágenes son opcionales
-              }
-            }, 1000); // Esperar 1 segundo antes de intentar cargar imágenes
-          }
-
           const { data: postsData, error: postsError } = postsResponse;
-          const { data: imagesData, error: imagesError } = imagesResponse;
           const { data: settingsData, error: settingsError } = settingsResponse;
 
           if (postsError) throw postsError;
-          if (imagesError) throw imagesError;
           if (settingsError) throw settingsError;
 
-          // Group images by tour_id
-          const imagesByTour: Record<string, TourImage[]> = {};
-          (imagesData || []).forEach(image => {
-            if (!imagesByTour[image.tour_id]) {
-              imagesByTour[image.tour_id] = [];
-            }
-            imagesByTour[image.tour_id].push(image);
-          });
-
-          // Actualizar estado
+          // Actualizar posts y settings primero
           setPosts(postsData || []);
-          setTourImages(imagesByTour);
           setSiteSettings(settingsData || []);
 
           // Guardar en caché
           toursCache.set(CACHE_KEYS.TOURS, postsData || [], CACHE_TTL.TOURS);
-          tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
           siteSettingsCache.set(CACHE_KEYS.SITE_SETTINGS, settingsData || [], CACHE_TTL.SITE_SETTINGS);
+
+          // Cargar imágenes DESPUÉS de cargar posts
+          if (postsData && postsData.length > 0) {
+            try {
+              const tourIds = postsData.map(post => post.id);
+              
+              const { data: imagesData, error: imagesError } = await supabase
+                .from('tour_images')
+                .select('*')
+                .in('tour_id', tourIds)
+                .order('order_index', { ascending: true });
+
+              if (!imagesError && imagesData) {
+                // Group images by tour_id
+                const imagesByTour: Record<string, TourImage[]> = {};
+                imagesData.forEach(image => {
+                  if (!imagesByTour[image.tour_id]) {
+                    imagesByTour[image.tour_id] = [];
+                  }
+                  imagesByTour[image.tour_id].push(image);
+                });
+                
+                console.log('✅ Tour images loaded:', imagesByTour);
+                setTourImages(imagesByTour);
+                tourImagesCache.set(CACHE_KEYS.TOUR_IMAGES, imagesByTour, CACHE_TTL.TOUR_IMAGES);
+              }
+            } catch (imageError) {
+              console.warn('Tour images loading failed (non-critical):', imageError);
+              setTourImages({});
+            }
+          }
 
           // Set current background image
           const bgSetting = settingsData?.find(s => s.setting_key === 'hero_background_image');

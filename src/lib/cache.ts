@@ -104,14 +104,14 @@ export const CACHE_KEYS = {
   TOUR_IMAGES_DETAIL: (id: string) => `tour_images_${id}`,
 } as const;
 
-// TTL constants for maximum performance - TTLs extremadamente largos
+// TTL constants - Tiempos más razonables para permitir actualizaciones
 export const CACHE_TTL = {
-  TOURS: 30 * 24 * 60 * 60 * 1000, // 30 días
-  TOUR_IMAGES: 30 * 24 * 60 * 60 * 1000, // 30 días
-  SITE_SETTINGS: 90 * 24 * 60 * 60 * 1000, // 90 días
-  RESERVATIONS: 5 * 60 * 1000, // 5 minutos (datos que cambian frecuentemente)
-  MESSAGES: 5 * 60 * 1000, // 5 minutos (datos que cambian frecuentemente)
-  TOUR_DETAIL: 30 * 24 * 60 * 60 * 1000, // 30 días
+  TOURS: 5 * 60 * 1000, // 5 minutos
+  TOUR_IMAGES: 5 * 60 * 1000, // 5 minutos
+  SITE_SETTINGS: 30 * 60 * 1000, // 30 minutos
+  RESERVATIONS: 2 * 60 * 1000, // 2 minutos (datos que cambian frecuentemente)
+  MESSAGES: 2 * 60 * 1000, // 2 minutos (datos que cambian frecuentemente)
+  TOUR_DETAIL: 5 * 60 * 1000, // 5 minutos
 } as const;
 
 // Funciones de utilidad para invalidar caché

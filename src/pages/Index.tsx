@@ -241,94 +241,54 @@ const Index = () => {
           return;
         }
 
-        // Mostrar contenido básico inmediatamente - sin esperar datos de BD
-        console.log('⚡ Showing basic content immediately...');
-        const basicTours: Tour[] = [
-          {
-            id: '1',
-            title: 'Isla Saona',
-            description: 'Disfruta de las mejores playas del Caribe',
-            image_url: '/src/assets/tour-saona-island.jpg',
-            price: 45,
-            duration: '8 horas',
-            rating: 4.8,
-            category: 'playa',
-            group_size: '2-50 personas',
-            highlights: ['Playa paradisíaca', 'Aguas cristalinas', 'Almuerzo en la playa']
-          },
-          {
-            id: '2',
-            title: 'Hoyo Azul',
-            description: 'Aventura en el corazón de la selva tropical',
-            image_url: '/src/assets/tour-hoyo-azul.jpg',
-            price: 65,
-            duration: '6 horas',
-            rating: 4.9,
-            category: 'aventura',
-            group_size: '2-20 personas',
-            highlights: ['Cenote natural', 'Caminata ecológica', 'Aguas turquesas']
-          },
-          {
-            id: '3',
-            title: 'Safari Aventura',
-            description: 'Descubre la República Dominicana auténtica',
-            image_url: '/1.jpg',
-            price: 55,
-            duration: '7 horas',
-            rating: 4.7,
-            category: 'aventura',
-            group_size: '4-16 personas',
-            highlights: ['Pueblos auténticos', 'Paisajes naturales', 'Cultura local']
-          }
-        ];
-        
-        setTours(basicTours);
-        setLoading(false);
-        console.log('✅ Basic content shown immediately');
+        // Mostrar animación de carga mientras se cargan los datos reales
+        console.log('⚡ Loading tours from database...');
+        setLoading(true);
 
-        // Cargar datos reales de la base de datos en segundo plano
-        setTimeout(async () => {
-          try {
-            console.log('📡 Loading real data from database in background...');
+        // Cargar datos reales de la base de datos
+        try {
+          console.log('📡 Loading real data from database...');
+          
+          // Cargar los tours desde la base de datos
+          const { data: toursData, error: toursError } = await supabase
+            .from('posts')
+            .select('id, title, description, price, duration, category, image_url, rating, group_size, highlights, display_order')
+            .order('display_order', { ascending: true })
+            .order('created_at', { ascending: false });
+
+          if (toursError) {
+            console.error('Error loading tours from database:', toursError);
+            throw toursError;
+          }
+
+          console.log('📊 Raw tours data from database:', toursData);
+
+          if (toursData && toursData.length > 0) {
+            // Procesar los tours de la base de datos
+            const processedTours: Tour[] = toursData.map((tour: any) => ({
+              id: tour.id,
+              title: tour.title,
+              description: tour.description,
+              image_url: tour.image_url || '/placeholder.svg',
+              price: tour.price || 0,
+              duration: tour.duration || '4 horas',
+              rating: tour.rating || 4.8,
+              category: tour.category || 'aventura',
+              group_size: tour.group_size || '2-20 personas',
+              highlights: Array.isArray(tour.highlights) ? tour.highlights : ['Experiencia única', 'Guía profesional', 'Transporte incluido']
+            }));
             
-            // Cargar los tours desde la base de datos
-            const { data: toursData, error: toursError } = await supabase
-              .from('posts')
-              .select('id, title, description, price, duration, category, image_url, rating, group_size, highlights, display_order')
-              .order('display_order', { ascending: true })
-              .order('created_at', { ascending: false });
-
-            if (toursError) {
-              console.error('Error loading tours from database:', toursError);
-              throw toursError;
-            }
-
-            console.log('📊 Raw tours data from database:', toursData);
-
-            if (toursData && toursData.length > 0) {
-              // Procesar los tours de la base de datos
-              const processedTours: Tour[] = toursData.map((tour: any) => ({
-                id: tour.id,
-                title: tour.title,
-                description: tour.description,
-                image_url: tour.image_url || '/placeholder.svg',
-                price: tour.price || 0,
-                duration: tour.duration || '4 horas',
-                rating: tour.rating || 4.8,
-                category: tour.category || 'aventura',
-                group_size: tour.group_size || '2-20 personas',
-                highlights: Array.isArray(tour.highlights) ? tour.highlights : ['Experiencia única', 'Guía profesional', 'Transporte incluido']
-              }));
-              
-              setTours(processedTours);
-              toursCache.set(CACHE_KEYS.TOURS, processedTours, CACHE_TTL.TOURS);
-              console.log('✅ Tours reales cargados desde la base de datos:', processedTours.length);
-            }
-
-          } catch (error) {
-            console.error('Error loading background data:', error);
+            setTours(processedTours);
+            toursCache.set(CACHE_KEYS.TOURS, processedTours, CACHE_TTL.TOURS);
+            console.log('✅ Tours reales cargados desde la base de datos:', processedTours.length);
           }
-        }, 100);
+          
+          setLoading(false);
+
+        } catch (error) {
+          console.error('Error loading background data:', error);
+          setLoading(false);
+        }
 
       } catch (error) {
         console.error('Error in data loading:', error);
@@ -497,12 +457,41 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">
-            Cargando tours...
-          </p>
-          <p className="text-gray-500 text-sm mt-2">Optimizando para mejor rendimiento...</p>
+        <div className="text-center space-y-6 px-4">
+          {/* Logo/Icon animado */}
+          <div className="relative">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center mx-auto animate-pulse">
+              <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-white animate-bounce" />
+            </div>
+            <div className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+          </div>
+          
+          {/* Texto de carga */}
+          <div className="space-y-2">
+            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Jon Tours Punta Cana
+            </h2>
+            <p className="text-gray-700 text-base sm:text-lg font-medium">
+              Cargando tours increíbles...
+            </p>
+            <p className="text-gray-500 text-sm">
+              Preparando las mejores experiencias para ti
+            </p>
+          </div>
+          
+          {/* Barras de progreso animadas */}
+          <div className="w-full max-w-xs mx-auto space-y-2">
+            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full animate-[loading_2s_ease-in-out_infinite]"></div>
+            </div>
+          </div>
+          
+          {/* Puntos animados */}
+          <div className="flex justify-center space-x-2">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
         </div>
       </div>
     );
